@@ -1,0 +1,202 @@
+// File: lib/screens/details/search.dart
+
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+// Import helper dan model data yang diperlukan
+// Ganti 'museum_tugasakhir' dengan nama proyek Anda
+import 'package:museum_tugasakhir/data/data.dart';
+import 'package:museum_tugasakhir/screens/details/details.dart';
+
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({Key? key}) : super(key: key);
+
+  @override
+  _SearchScreenState createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  String _searchQuery = ""; // Untuk menyimpan teks yang diketik pengguna
+
+  // --- Fungsi pembantu ini kita salin dari CategoryItemsScreen ---
+  // Tugas: Memilih halaman detail yang benar untuk dibuka.
+  Widget _createDetailScreen(Object data) {
+    if (data is ArtefakData) {
+      return ArtefakDetailScreen(artefakData: data);
+    } else if (data is BatuanData) {
+      return BatuanDetailScreen(batuanData: data);
+    } else if (data is FosilData) {
+      return FosilDetailScreen(fosilData: data);
+    } else if (data is MineralData) {
+      return MineralDetailScreen(mineralData: data);
+    }
+    return const Scaffold(body: Center(child: Text('Tipe data tidak valid')));
+  }
+
+  // Tugas: Mengubah data mentah (Map) dari Firestore menjadi objek data.
+  Object? _createDataModel(Map<String, dynamic> firestoreData) {
+    final category = firestoreData['category'] as String?;
+    if (category == null) return null;
+
+    switch (category) {
+      case 'Artefak':
+        return ArtefakData.fromFirestore(firestoreData);
+      case 'Batuan':
+        return BatuanData.fromFirestore(firestoreData);
+      case 'Fosil':
+        return FosilData.fromFirestore(firestoreData);
+      case 'Mineral':
+        return MineralData.fromFirestore(firestoreData);
+      default:
+        return null;
+    }
+  }
+  // --- Akhir dari fungsi pembantu ---
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        // Kolom input pencarian di dalam AppBar
+        title: TextField(
+          autofocus: true, // Keyboard langsung muncul saat halaman dibuka
+          decoration: const InputDecoration(
+            hintText: 'Cari koleksi...',
+            border: InputBorder.none,
+            hintStyle: TextStyle(color: Colors.white70),
+          ),
+          style: const TextStyle(color: Colors.white, fontSize: 18),
+          onChanged: (value) {
+            // Setiap kali pengguna mengetik, update state searchQuery
+            setState(() {
+              // Simpan query dalam huruf kecil untuk pencarian case-insensitive
+              _searchQuery = value.toLowerCase();
+            });
+          },
+        ),
+        // # PERUBAHAN: Menggunakan gradient agar warnanya sama dengan AppBar lain
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [Color(0xFFFFD54F), Color(0xFFFFA000)],
+            ),
+          ),
+        ),
+      ),
+      body: _searchQuery.isEmpty
+          ? Center(
+              // Tampilan awal saat pengguna belum mengetik apa-apa
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search, size: 80, color: Colors.grey[300]),
+                  Text(
+                    'Ketik untuk mencari koleksi museum.',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 18,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : StreamBuilder<QuerySnapshot>(
+              // Query dikembalikan ke pencarian awalan (prefix search)
+              stream: FirebaseFirestore.instance
+                  .collection('koleksi')
+                  // Mencari awalan kata pada field 'search_keyword'
+                  .where('search_keyword', isGreaterThanOrEqualTo: _searchQuery)
+                  .where('search_keyword',
+                      isLessThanOrEqualTo: '$_searchQuery\uf8ff')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'Tidak ada hasil untuk "$_searchQuery"',
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                  );
+                }
+
+                // Tampilan hasil pencarian sekarang menggunakan Card seperti di halaman kategori
+                return ListView(
+                  padding: const EdgeInsets.all(10),
+                  children: snapshot.data!.docs.map((doc) {
+                    final data = doc.data()! as Map<String, dynamic>;
+                    final itemData = _createDataModel(data);
+
+                    return GestureDetector(
+                      onTap: () {
+                        if (itemData != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    _createDetailScreen(itemData)),
+                          );
+                        }
+                      },
+                      child: Container(
+                        clipBehavior: Clip.antiAlias,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(23),
+                        ),
+                        child: Stack(
+                          children: [
+                            Image.network(
+                              data['imageUrl'] ??
+                                  'https://placehold.co/600x400/EEE/31343C',
+                              width: 380,
+                              height: 300,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, progress) =>
+                                  progress == null
+                                      ? child
+                                      : const Center(
+                                          child: CircularProgressIndicator()),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(
+                                      child:
+                                          Icon(Icons.broken_image, size: 40)),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                ),
+                                child: Text(
+                                  data['title'] ?? 'Tanpa Judul',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+    );
+  }
+}

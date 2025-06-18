@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "113092505912",
+    "project_id": "museum-tugasakhir",
+    "storage_bucket": "museum-tugasakhir.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:113092505912:android:bd9a1568b1dab1e08391cd",
+        "android_client_info": {
+          "package_name": "com.example.museum_tugasakhir"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgH8YAGM5mND3GY87_7c1P_hZiI1bgOs0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
