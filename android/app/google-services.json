@@ -12,7 +12,20 @@
           "package_name": "com.example.museum_tugasakhir"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "113092505912-6172k1n5qc498hgdarpicmcs00m4fdna.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.museum_tugasakhir",
+            "certificate_hash": "d4ac1ee5b95d643aa6da0ffdcd9c3e3a318b2c13"
+          }
+        },
+        {
+          "client_id": "113092505912-8ig0cpvr06jpn1qa8h42118vo8qc6v3q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDgH8YAGM5mND3GY87_7c1P_hZiI1bgOs0"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "113092505912-8ig0cpvr06jpn1qa8h42118vo8qc6v3q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "113092505912-1j6ii8ffuda3kane5jdfee709p7n8jmp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.museumTugasakhir"
+              }
+            }
+          ]
         }
       }
     }
