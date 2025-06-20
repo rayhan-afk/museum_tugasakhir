@@ -171,8 +171,12 @@ class MostPopularWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Query query =
-        FirebaseFirestore.instance.collection('koleksi').limit(1);
+    // # PERUBAHAN UTAMA: Query sekarang mengurutkan berdasarkan favoriteCount
+    final Query query = FirebaseFirestore.instance
+        .collection('koleksi')
+        .orderBy('favoriteCount',
+            descending: true) // Urutkan dari yang paling banyak difavoritkan
+        .limit(1); // Ambil 1 item teratas
 
     return StreamBuilder<QuerySnapshot>(
       stream: query.snapshots(),
@@ -192,7 +196,6 @@ class MostPopularWidget extends StatelessWidget {
 
         return GestureDetector(
           onTap: () {
-            // Memanggil fungsi helper top-level
             final itemData = createDataModel(data, doc.id);
             if (itemData != null) {
               Navigator.push(

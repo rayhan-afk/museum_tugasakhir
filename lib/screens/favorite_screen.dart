@@ -45,21 +45,21 @@ class FavoritesScreen extends StatelessWidget {
     final user = Provider.of<User?>(context);
 
     // Jika pengguna belum login, tampilkan pesan
-    if (user == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Favorit Saya')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Text(
-              'Silakan login terlebih dahulu untuk melihat koleksi favorit Anda.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(fontSize: 18),
-            ),
-          ),
-        ),
-      );
-    }
+    // if (user == null) {
+    //   return Scaffold(
+    //     appBar: AppBar(title: const Text('Favorit Saya')),
+    //     body: Center(
+    //       child: Padding(
+    //         padding: const EdgeInsets.all(20.0),
+    //         child: Text(
+    //           'Silakan login terlebih dahulu untuk melihat koleksi favorit Anda.',
+    //           textAlign: TextAlign.center,
+    //           style: GoogleFonts.montserrat(fontSize: 18),
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // }
 
     // Jika sudah login, tampilkan daftar favorit dari Firestore
     return Scaffold(
@@ -78,7 +78,7 @@ class FavoritesScreen extends StatelessWidget {
       ),
       body: StreamBuilder<QuerySnapshot>(
         // Menggunakan stream dari FirestoreService untuk mendapatkan daftar favorit
-        stream: FirestoreService().getFavoritesStream(user.uid),
+        stream: FirestoreService().getFavoritesStream(user!.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

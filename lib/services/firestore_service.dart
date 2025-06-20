@@ -1,65 +1,62 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirestoreService {
-  // Membuat instance dari Firestore
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Mendapatkan koleksi 'users'
   CollectionReference<Map<String, dynamic>> get _usersCollection =>
       _db.collection('users');
+  CollectionReference<Map<String, dynamic>> get _koleksiCollection =>
+      _db.collection('koleksi');
 
-  // --- FUNGSI UTAMA UNTUK FITUR FAVORIT ---
-
-  /// Menambah atau menghapus item dari favorit pengguna.
-  ///
-  /// [userId] adalah ID pengguna yang sedang login.
-  /// [itemId] adalah ID unik dari item koleksi yang akan difavoritkan.
-  /// [itemData] adalah data lengkap dari item tersebut (dalam bentuk Map).
+  /// Menambah atau menghapus item dari favorit pengguna menggunakan Transaction.
   Future<void> toggleFavorite(
       String userId, String itemId, Map<String, dynamic> itemData) async {
-    // Menunjuk ke dokumen favorit spesifik untuk pengguna dan item ini.
-    // Strukturnya: users -> {userId} -> favorites -> {itemId}
-    final docRef =
+    final userFavoriteRef =
         _usersCollection.doc(userId).collection('favorites').doc(itemId);
+    final mainItemRef = _koleksiCollection.doc(itemId);
 
-    // Mengecek apakah dokumen tersebut sudah ada atau belum.
-    final doc = await docRef.get();
+    return _db.runTransaction((transaction) async {
+      // # PERBAIKAN: Lakukan semua operasi BACA (get) terlebih dahulu
+      final favoriteDoc = await transaction.get(userFavoriteRef);
+      final mainItemDoc = await transaction.get(mainItemRef);
 
-    if (doc.exists) {
-      // Jika dokumen sudah ada, berarti item ini sudah difavoritkan.
-      // Kita akan menghapusnya untuk "unfavorite".
-      await docRef.delete();
-    } else {
-      // Jika dokumen belum ada, berarti item ini belum difavoritkan.
-      // Kita akan membuatnya untuk "favorite".
-      // Kita menyimpan itemData lengkap agar nanti mudah saat membuat halaman 'Koleksi Favorit'.
-      await docRef.set(itemData);
-    }
+      if (favoriteDoc.exists) {
+        // --- Jika item SUDAH difavoritkan (logika unfavorite) ---
+        // Lakukan semua operasi TULIS (delete, update) setelah membaca
+        transaction.delete(userFavoriteRef);
+
+        final currentCount = mainItemDoc.data()?['favoriteCount'] ?? 0;
+        if (currentCount > 0) {
+          transaction
+              .update(mainItemRef, {'favoriteCount': FieldValue.increment(-1)});
+        }
+      } else {
+        // --- Jika item BELUM difavoritkan (logika favorite) ---
+        // Lakukan semua operasi TULIS (set, update)
+        transaction.set(userFavoriteRef, itemData);
+        transaction
+            .update(mainItemRef, {'favoriteCount': FieldValue.increment(1)});
+      }
+    });
   }
 
-  /// Stream untuk mendengarkan status favorit sebuah item secara real-time.
-  ///
-  /// Mengembalikan `true` jika item sudah difavoritkan, dan `false` jika belum.
+  /// Stream untuk mendengarkan status favorit sebuah item secara real-time. (Tidak Berubah)
   Stream<bool> isFavoritedStream(String userId, String itemId) {
-    // Menunjuk ke dokumen favorit yang sama.
-    final docRef =
-        _usersCollection.doc(userId).collection('favorites').doc(itemId);
-
-    // snapshots() akan mengirim update setiap kali ada perubahan pada dokumen ini.
-    // .map() mengubah hasil snapshot menjadi nilai boolean sederhana.
-    return docRef.snapshots().map((snapshot) => snapshot.exists);
+    return _usersCollection
+        .doc(userId)
+        .collection('favorites')
+        .doc(itemId)
+        .snapshots()
+        .map((snapshot) => snapshot.exists);
   }
 
-  // --- FUNGSI UNTUK HALAMAN KOLEKSI FAVORIT (NANTI) ---
-
-  /// Stream untuk mendapatkan semua item favorit dari seorang pengguna.
+  /// Stream untuk mendapatkan semua item favorit dari seorang pengguna. (Tidak Berubah)
   Stream<QuerySnapshot<Map<String, dynamic>>> getFavoritesStream(
       String userId) {
     return _usersCollection
         .doc(userId)
         .collection('favorites')
-        .orderBy('addedAt',
-            descending: true) // Urutkan dari yang terbaru ditambahkan
+        .orderBy('addedAt', descending: true)
         .snapshots();
   }
 }
