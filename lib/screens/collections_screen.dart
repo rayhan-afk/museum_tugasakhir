@@ -5,11 +5,43 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Ganti 'museum_tugasakhir' dengan nama proyek Anda
-import 'package:museum_tugasakhir/screens/categories/category_items_screen.dart'; // # PERUBAHAN: Import halaman baru
+import 'package:museum_tugasakhir/screens/categories/category_items_screen.dart';
 import 'package:museum_tugasakhir/screens/details/search.dart';
 import 'package:museum_tugasakhir/widgets/categories_tile.dart';
-import 'package:museum_tugasakhir/data/data.dart'; // Untuk model data
-import 'package:museum_tugasakhir/screens/details/details.dart'; // Untuk halaman detail
+import 'package:museum_tugasakhir/data/data.dart';
+import 'package:museum_tugasakhir/screens/details/details.dart';
+
+// --- FUNGSI PEMBANTU (HELPER FUNCTIONS) DITARUH DI LUAR KELAS ---
+// Ini membuat fungsi bisa diakses dengan lebih mudah dan konsisten.
+
+// Tugas: Memilih halaman detail yang benar untuk dibuka.
+Widget createDetailScreen(Object data) {
+  if (data is ArtefakData) return ArtefakDetailScreen(artefakData: data);
+  if (data is BatuanData) return BatuanDetailScreen(batuanData: data);
+  if (data is FosilData) return FosilDetailScreen(fosilData: data);
+  if (data is MineralData) return MineralDetailScreen(mineralData: data);
+  return const Scaffold(body: Center(child: Text('Tipe data tidak valid')));
+}
+
+// Tugas: Mengubah data mentah (Map) dari Firestore menjadi objek data.
+Object? createDataModel(Map<String, dynamic> firestoreData, String docId) {
+  final category = firestoreData['category'] as String?;
+  if (category == null) return null;
+
+  switch (category) {
+    case 'Artefak':
+      return ArtefakData.fromFirestore(firestoreData, docId);
+    case 'Batuan':
+      return BatuanData.fromFirestore(firestoreData, docId);
+    case 'Fosil':
+      return FosilData.fromFirestore(firestoreData, docId);
+    case 'Mineral':
+      return MineralData.fromFirestore(firestoreData, docId);
+    default:
+      return null;
+  }
+}
+// --- AKHIR DARI FUNGSI PEMBANTU ---
 
 class CollectionsScreen extends StatelessWidget {
   const CollectionsScreen({Key? key}) : super(key: key);
@@ -21,50 +53,37 @@ class CollectionsScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // --- Kolom Pencarian (Tetap Sama) ---
+            // --- Kolom Pencarian ---
             Padding(
               padding: const EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 20.0),
-              child: Container(
-                // ... kode search bar Anda ...
-                child: TextField(
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const SearchScreen()));
-                  },
-                  readOnly: true,
-                  style: GoogleFonts.montserrat(),
-                  decoration: InputDecoration(
-                    hintText: 'Search for items...',
-                    hintStyle: GoogleFonts.montserrat(color: Colors.grey[600]),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-
-                    filled: true,
-                    fillColor: Colors.grey[200],
-
-                    // Mengatur border saat tidak aktif
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                      borderSide: const BorderSide(
-                        color: Colors.transparent, // Border transparan
-                      ),
-                    ),
-
-                    // # PERUBAHAN: Mengatur border saat di-tap (fokus)
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                      borderSide: const BorderSide(
-                        color:
-                            Colors.transparent, // Border juga dibuat transparan
-                      ),
-                    ),
+              child: TextField(
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SearchScreen()));
+                },
+                readOnly: true,
+                style: GoogleFonts.montserrat(),
+                decoration: InputDecoration(
+                  hintText: 'Search for items...',
+                  hintStyle: GoogleFonts.montserrat(color: Colors.grey[600]),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                    borderSide: const BorderSide(color: Colors.transparent),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                    borderSide: const BorderSide(color: Colors.transparent),
                   ),
                 ),
               ),
             ),
 
-            // --- Judul Kategori (Tetap Sama) ---
+            // --- Judul Kategori ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Row(
@@ -76,53 +95,45 @@ class CollectionsScreen extends StatelessWidget {
               ),
             ),
 
-            // --- # PERUBAHAN: NAVIGASI KATEGORI ---
+            // --- Navigasi Kategori ---
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   InkWell(
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const CategoryItemsScreen(
-                                  categoryName: 'Artefak')));
-                    },
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const CategoryItemsScreen(
+                                categoryName: 'Artefak'))),
                     child: CategoriesTile(
                         imageUrl: 'assets/image/artefak.png', text: 'Artefak'),
                   ),
                   InkWell(
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const CategoryItemsScreen(
-                                  categoryName: 'Batuan')));
-                    },
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const CategoryItemsScreen(
+                                categoryName: 'Batuan'))),
                     child: CategoriesTile(
                         imageUrl: 'assets/image/batuan.png', text: 'Batuan'),
                   ),
                   InkWell(
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const CategoryItemsScreen(
-                                  categoryName: 'Fosil')));
-                    },
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const CategoryItemsScreen(
+                                categoryName: 'Fosil'))),
                     child: CategoriesTile(
                         imageUrl: 'assets/image/fosil.png', text: 'Fosil'),
                   ),
                   InkWell(
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const CategoryItemsScreen(
-                                  categoryName: 'Mineral')));
-                    },
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const CategoryItemsScreen(
+                                categoryName: 'Mineral'))),
                     child: CategoriesTile(
                         imageUrl: 'assets/image/mineral.png', text: 'Mineral'),
                   ),
@@ -130,7 +141,7 @@ class CollectionsScreen extends StatelessWidget {
               ),
             ),
 
-            // --- Judul Most Popular (Tetap Sama) ---
+            // --- Judul Most Popular ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Row(
@@ -142,11 +153,10 @@ class CollectionsScreen extends StatelessWidget {
               ),
             ),
 
-            // --- # PERUBAHAN: BAGIAN MOST POPULAR DINAMIS ---
+            // --- Bagian Most Popular Dinamis ---
             const Padding(
               padding: EdgeInsets.all(20),
-              child:
-                  MostPopularWidget(), // Menggunakan widget baru yang dinamis
+              child: MostPopularWidget(),
             ),
           ],
         ),
@@ -155,18 +165,12 @@ class CollectionsScreen extends StatelessWidget {
   }
 }
 
-// --- WIDGET BARU UNTUK MENAMPILKAN ITEM PALING POPULER ---
-// Anda bisa letakkan ini di file terpisah (misal: lib/widgets/most_popular_widget.dart)
-// atau biarkan di sini jika sederhana.
-
+// WIDGET BARU UNTUK MENAMPILKAN ITEM PALING POPULER
 class MostPopularWidget extends StatelessWidget {
   const MostPopularWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Query untuk mengambil 1 item secara acak/teratas dari koleksi
-    // Untuk "paling populer" sebenarnya, Anda butuh field seperti 'viewCount' dan diurutkan.
-    // Untuk sekarang, kita ambil 1 saja sebagai contoh.
     final Query query =
         FirebaseFirestore.instance.collection('koleksi').limit(1);
 
@@ -183,48 +187,18 @@ class MostPopularWidget extends StatelessWidget {
               child: Center(child: Text('Tidak ada item populer.')));
         }
 
-        // Ambil data dari dokumen pertama
         final doc = snapshot.data!.docs.first;
         final data = doc.data()! as Map<String, dynamic>;
 
-        // Tampilan yang sama seperti sebelumnya, tapi dengan data dinamis
         return GestureDetector(
           onTap: () {
-            // Navigasi ke halaman detail saat gambar di-tap
-            final category = data['category'] ?? '';
-            Object? itemData;
-            // Buat model data yang benar berdasarkan kategori
-            switch (category) {
-              case 'Artefak':
-                itemData = ArtefakData.fromFirestore(data);
-                break;
-              case 'Batuan':
-                itemData = BatuanData.fromFirestore(data);
-                break;
-              case 'Fosil':
-                itemData = FosilData.fromFirestore(data);
-                break;
-              case 'Mineral':
-                itemData = MineralData.fromFirestore(data);
-                break;
-            }
-
+            // Memanggil fungsi helper top-level
+            final itemData = createDataModel(data, doc.id);
             if (itemData != null) {
-              Widget detailScreen;
-              if (itemData is ArtefakData)
-                detailScreen = ArtefakDetailScreen(artefakData: itemData);
-              else if (itemData is BatuanData)
-                detailScreen = BatuanDetailScreen(batuanData: itemData);
-              else if (itemData is FosilData)
-                detailScreen = FosilDetailScreen(fosilData: itemData);
-              else if (itemData is MineralData)
-                detailScreen = MineralDetailScreen(mineralData: itemData);
-              else
-                detailScreen = const Scaffold(
-                    body: Center(child: Text('Tipe data tidak valid')));
-
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => detailScreen));
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => createDetailScreen(itemData)));
             }
           },
           child: Container(

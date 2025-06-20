@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// Ganti 'museum_tugasakhir' dengan nama folder proyek Anda
+// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/data/data.dart';
 import 'package:museum_tugasakhir/screens/details/detailscreen.dart';
 
@@ -16,9 +16,10 @@ class ArtefakDetailScreen extends StatelessWidget {
       getTitle: (data) => data.title,
       getYear: (data) => data.year,
       getDescription: (data) => data.description,
-      getImage: (data) => data.imageUrl,
-      // Di sinilah kita tentukan path ikonnya secara statis
+      getImageUrl: (data) => data.imageUrl, // Menggunakan 'imageUrl'
       getCategoryIconPath: (data) => 'assets/image/artefak.png',
+      getItemId: (data) => data.id, // DITAMBAHKAN: Mengirim ID item
+      toMap: (data) => data.toMap(), // DITAMBAHKAN: Mengirim fungsi toMap
     );
   }
 }
@@ -36,9 +37,10 @@ class BatuanDetailScreen extends StatelessWidget {
       getTitle: (data) => data.title,
       getYear: (data) => data.year,
       getDescription: (data) => data.description,
-      getImage: (data) => data.imageUrl,
-      // Di sini kita tentukan path ikon untuk Batuan
+      getImageUrl: (data) => data.imageUrl, // Menggunakan 'imageUrl'
       getCategoryIconPath: (data) => 'assets/image/batuan.png',
+      getItemId: (data) => data.id, // DITAMBAHKAN: Mengirim ID item
+      toMap: (data) => data.toMap(), // DITAMBAHKAN: Mengirim fungsi toMap
     );
   }
 }
@@ -56,9 +58,10 @@ class FosilDetailScreen extends StatelessWidget {
       getTitle: (data) => data.title,
       getYear: (data) => data.year,
       getDescription: (data) => data.description,
-      getImage: (data) => data.imageUrl,
-      // Di sini kita tentukan path ikon untuk Fosil
+      getImageUrl: (data) => data.imageUrl, // Menggunakan 'imageUrl'
       getCategoryIconPath: (data) => 'assets/image/fosil.png',
+      getItemId: (data) => data.id, // DITAMBAHKAN: Mengirim ID item
+      toMap: (data) => data.toMap(), // DITAMBAHKAN: Mengirim fungsi toMap
     );
   }
 }
@@ -76,9 +79,10 @@ class MineralDetailScreen extends StatelessWidget {
       getTitle: (data) => data.title,
       getYear: (data) => data.year,
       getDescription: (data) => data.description,
-      getImage: (data) => data.imageUrl,
-      // Di sini kita tentukan path ikon untuk Mineral
+      getImageUrl: (data) => data.imageUrl, // Menggunakan 'imageUrl'
       getCategoryIconPath: (data) => 'assets/image/mineral.png',
+      getItemId: (data) => data.id, // DITAMBAHKAN: Mengirim ID item
+      toMap: (data) => data.toMap(), // DITAMBAHKAN: Mengirim fungsi toMap
     );
   }
 }

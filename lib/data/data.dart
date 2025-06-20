@@ -1,96 +1,151 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ArtefakData {
+  final String id;
   final String title;
   final String year;
   final String description;
-  final String imageUrl; // Satu properti untuk URL gambar
+  final String imageUrl;
 
   const ArtefakData({
+    required this.id,
     required this.title,
     required this.year,
     required this.description,
     required this.imageUrl,
   });
 
-  // Factory constructor untuk membuat ArtefakData dari data Firestore
-  factory ArtefakData.fromFirestore(Map<String, dynamic> data) {
+  factory ArtefakData.fromFirestore(Map<String, dynamic> data, String docId) {
     return ArtefakData(
+      id: docId,
       title: data['title'] ?? 'Tanpa Judul',
       year: data['year'] ?? 'Tahun Tidak Diketahui',
       description: data['description'] ?? 'Tidak ada deskripsi.',
-      imageUrl: data['imageUrl'] ?? '', // Ambil URL gambar dari Firestore
+      imageUrl: data['imageUrl'] ?? '',
     );
+  }
+
+  // Fungsi untuk mengubah objek menjadi Map agar bisa disimpan di Firestore
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'year': year,
+      'imageUrl': imageUrl,
+      'description': description,
+      'category': 'Artefak',
+      'addedAt': FieldValue.serverTimestamp(),
+    };
   }
 }
 
 class BatuanData {
+  final String id;
   final String title;
   final String year;
   final String description;
   final String imageUrl;
 
   const BatuanData({
+    required this.id,
     required this.title,
     required this.year,
     required this.description,
     required this.imageUrl,
   });
 
-  // Factory constructor untuk membuat BatuanData dari data Firestore
-  factory BatuanData.fromFirestore(Map<String, dynamic> data) {
+  factory BatuanData.fromFirestore(Map<String, dynamic> data, String docId) {
     return BatuanData(
+      id: docId,
       title: data['title'] ?? 'Tanpa Judul',
       year: data['year'] ?? 'Tahun Tidak Diketahui',
       description: data['description'] ?? 'Tidak ada deskripsi.',
       imageUrl: data['imageUrl'] ?? '',
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'year': year,
+      'imageUrl': imageUrl,
+      'description': description,
+      'category': 'Batuan',
+      'addedAt': FieldValue.serverTimestamp(),
+    };
+  }
 }
 
 class FosilData {
+  final String id;
   final String title;
   final String year;
   final String description;
   final String imageUrl;
 
   const FosilData({
+    required this.id,
     required this.title,
     required this.year,
     required this.description,
     required this.imageUrl,
   });
 
-  // Factory constructor untuk membuat FosilData dari data Firestore
-  factory FosilData.fromFirestore(Map<String, dynamic> data) {
+  factory FosilData.fromFirestore(Map<String, dynamic> data, String docId) {
     return FosilData(
+      id: docId,
       title: data['title'] ?? 'Tanpa Judul',
       year: data['year'] ?? 'Tahun Tidak Diketahui',
       description: data['description'] ?? 'Tidak ada deskripsi.',
       imageUrl: data['imageUrl'] ?? '',
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'year': year,
+      'imageUrl': imageUrl,
+      'description': description,
+      'category': 'Fosil',
+      'addedAt': FieldValue.serverTimestamp(),
+    };
+  }
 }
 
 class MineralData {
+  final String id;
   final String title;
   final String year;
   final String description;
   final String imageUrl;
 
   const MineralData({
+    required this.id,
     required this.title,
     required this.year,
     required this.description,
     required this.imageUrl,
   });
 
-  // Factory constructor untuk membuat MineralData dari data Firestore
-  factory MineralData.fromFirestore(Map<String, dynamic> data) {
+  factory MineralData.fromFirestore(Map<String, dynamic> data, String docId) {
     return MineralData(
+      id: docId,
       title: data['title'] ?? 'Tanpa Judul',
       year: data['year'] ?? 'Tahun Tidak Diketahui',
       description: data['description'] ?? 'Tidak ada deskripsi.',
       imageUrl: data['imageUrl'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'year': year,
+      'imageUrl': imageUrl,
+      'description': description,
+      'category': 'Mineral',
+      'addedAt': FieldValue.serverTimestamp(),
+    };
   }
 }
 

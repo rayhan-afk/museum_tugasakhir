@@ -5,11 +5,13 @@ class IconWidget extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final String title;
+  final Color? color;
 
   const IconWidget({
     required this.icon,
     required this.onTap,
     required this.title,
+    this.color,
     Key? key,
   }) : super(key: key);
 

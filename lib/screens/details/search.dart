@@ -19,48 +19,43 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   String _searchQuery = ""; // Untuk menyimpan teks yang diketik pengguna
 
-  // --- Fungsi pembantu ini kita salin dari CategoryItemsScreen ---
-  // Tugas: Memilih halaman detail yang benar untuk dibuka.
+  // --- Fungsi pembantu untuk navigasi detail ---
   Widget _createDetailScreen(Object data) {
-    if (data is ArtefakData) {
-      return ArtefakDetailScreen(artefakData: data);
-    } else if (data is BatuanData) {
-      return BatuanDetailScreen(batuanData: data);
-    } else if (data is FosilData) {
-      return FosilDetailScreen(fosilData: data);
-    } else if (data is MineralData) {
-      return MineralDetailScreen(mineralData: data);
-    }
+    if (data is ArtefakData) return ArtefakDetailScreen(artefakData: data);
+    if (data is BatuanData) return BatuanDetailScreen(batuanData: data);
+    if (data is FosilData) return FosilDetailScreen(fosilData: data);
+    if (data is MineralData) return MineralDetailScreen(mineralData: data);
     return const Scaffold(body: Center(child: Text('Tipe data tidak valid')));
   }
 
-  // Tugas: Mengubah data mentah (Map) dari Firestore menjadi objek data.
-  Object? _createDataModel(Map<String, dynamic> firestoreData) {
+  // --- Fungsi pembantu untuk membuat model data ---
+  // # PERUBAHAN 1: Fungsi ini sekarang menerima ID Dokumen
+  Object? _createDataModel(Map<String, dynamic> firestoreData, String docId) {
     final category = firestoreData['category'] as String?;
     if (category == null) return null;
 
     switch (category) {
+      // # PERUBAHAN 2: ID Dokumen dikirim saat membuat objek data
       case 'Artefak':
-        return ArtefakData.fromFirestore(firestoreData);
+        return ArtefakData.fromFirestore(firestoreData, docId);
       case 'Batuan':
-        return BatuanData.fromFirestore(firestoreData);
+        return BatuanData.fromFirestore(firestoreData, docId);
       case 'Fosil':
-        return FosilData.fromFirestore(firestoreData);
+        return FosilData.fromFirestore(firestoreData, docId);
       case 'Mineral':
-        return MineralData.fromFirestore(firestoreData);
+        return MineralData.fromFirestore(firestoreData, docId);
       default:
         return null;
     }
   }
-  // --- Akhir dari fungsi pembantu ---
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Kolom input pencarian di dalam AppBar
+        // Kolom input pencarian (tidak berubah)
         title: TextField(
-          autofocus: true, // Keyboard langsung muncul saat halaman dibuka
+          autofocus: true,
           decoration: const InputDecoration(
             hintText: 'Cari koleksi...',
             border: InputBorder.none,
@@ -68,14 +63,11 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           style: const TextStyle(color: Colors.white, fontSize: 18),
           onChanged: (value) {
-            // Setiap kali pengguna mengetik, update state searchQuery
             setState(() {
-              // Simpan query dalam huruf kecil untuk pencarian case-insensitive
               _searchQuery = value.toLowerCase();
             });
           },
         ),
-        // # PERUBAHAN: Menggunakan gradient agar warnanya sama dengan AppBar lain
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: Container(
@@ -90,7 +82,7 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: _searchQuery.isEmpty
           ? Center(
-              // Tampilan awal saat pengguna belum mengetik apa-apa
+              // Tampilan awal (tidak berubah)
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -106,10 +98,9 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             )
           : StreamBuilder<QuerySnapshot>(
-              // Query dikembalikan ke pencarian awalan (prefix search)
+              // Query pencarian awalan (tidak berubah)
               stream: FirebaseFirestore.instance
                   .collection('koleksi')
-                  // Mencari awalan kata pada field 'search_keyword'
                   .where('search_keyword', isGreaterThanOrEqualTo: _searchQuery)
                   .where('search_keyword',
                       isLessThanOrEqualTo: '$_searchQuery\uf8ff')
@@ -127,12 +118,13 @@ class _SearchScreenState extends State<SearchScreen> {
                   );
                 }
 
-                // Tampilan hasil pencarian sekarang menggunakan Card seperti di halaman kategori
+                // # PERUBAHAN 3: Tampilan hasil pencarian sekarang sama dengan halaman kategori
                 return ListView(
                   padding: const EdgeInsets.all(10),
                   children: snapshot.data!.docs.map((doc) {
                     final data = doc.data()! as Map<String, dynamic>;
-                    final itemData = _createDataModel(data);
+                    // Memanggil _createDataModel dengan ID dokumen
+                    final itemData = _createDataModel(data, doc.id);
 
                     return GestureDetector(
                       onTap: () {
@@ -140,12 +132,14 @@ class _SearchScreenState extends State<SearchScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) =>
-                                    _createDetailScreen(itemData)),
+                              builder: (context) =>
+                                  _createDetailScreen(itemData),
+                            ),
                           );
                         }
                       },
                       child: Container(
+                        height: 300,
                         clipBehavior: Clip.antiAlias,
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
@@ -156,7 +150,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             Image.network(
                               data['imageUrl'] ??
                                   'https://placehold.co/600x400/EEE/31343C',
-                              width: 380,
+                              width: double.infinity,
                               height: 300,
                               fit: BoxFit.cover,
                               loadingBuilder: (context, child, progress) =>

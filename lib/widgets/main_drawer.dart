@@ -1,6 +1,9 @@
+// File: lib/widgets/main_drawer.dart
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:museum_tugasakhir/screens/favorite_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -85,7 +88,6 @@ class MainDrawer extends StatelessWidget {
 
           // --- BAGIAN MENU UTAMA ---
           if (isLoggedIn) ...[
-            // JIKA SUDAH LOGIN
             ListTile(
               leading: CircleAvatar(
                 backgroundImage: NetworkImage(user.photoURL ?? ''),
@@ -95,13 +97,19 @@ class MainDrawer extends StatelessWidget {
                 'Welcome, ${user.displayName ?? 'Pengguna'}',
                 style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
               ),
-              // Tidak ada subtitle dan onTap lagi
             ),
             IconWidget(
-              icon: Icons.favorite_border,
+              icon: Icons.favorite, // Ikon diubah menjadi terisi
+              color: Colors.red, // Warna ikon diubah (opsional)
               title: 'Koleksi Favorit',
               onTap: () {
-                // TODO: Navigasi ke halaman koleksi favorit
+                // # PERUBAHAN: Navigasi ke halaman favorit
+                Navigator.pop(context); // Tutup drawer dulu
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const FavoritesScreen()),
+                );
               },
             ),
           ] else ...[
@@ -109,9 +117,26 @@ class MainDrawer extends StatelessWidget {
             IconWidget(
               icon: FontAwesomeIcons.google,
               title: 'Login dengan Google',
-              onTap: () {
-                AuthService().signInWithGoogle();
-                Navigator.pop(context);
+              onTap: () async {
+                // # PERBAIKAN: Simpan referensi sebelum menutup drawer
+                final navigator = Navigator.of(context);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                // Tutup drawer terlebih dahulu
+                navigator.pop();
+
+                // Panggil fungsi login dan tunggu hasilnya
+                final user = await AuthService().signInWithGoogle();
+
+                // Tampilkan pesan jika login berhasil
+                if (user != null) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Selamat datang, ${user.displayName}!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
               },
             ),
           ],
@@ -136,9 +161,20 @@ class MainDrawer extends StatelessWidget {
             IconWidget(
               icon: Icons.logout,
               title: 'Logout',
-              onTap: () {
-                AuthService().signOut();
-                Navigator.pop(context);
+              onTap: () async {
+                final navigator = Navigator.of(context);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                navigator.pop();
+
+                await AuthService().signOut();
+
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Anda telah berhasil logout.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               },
             ),
           ],

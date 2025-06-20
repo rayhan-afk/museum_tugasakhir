@@ -3,14 +3,16 @@ import 'package:flutter/services.dart';
 
 class DetailSliverAppBar<T> extends StatelessWidget {
   final T data;
-  final String Function(T) getImage;
+  final String Function(T) getImageUrl;
   final String Function(T) getCategoryIconPath;
+  final Widget favoriteButton; // <-- DITAMBAHKAN
 
   const DetailSliverAppBar({
     Key? key,
     required this.data,
-    required this.getImage,
+    required this.getImageUrl,
     required this.getCategoryIconPath,
+    required this.favoriteButton, // <-- DITAMBAHKAN
   }) : super(key: key);
 
   @override
@@ -19,16 +21,11 @@ class DetailSliverAppBar<T> extends StatelessWidget {
       systemOverlayStyle:
           const SystemUiOverlayStyle(statusBarBrightness: Brightness.dark),
       expandedHeight: 275.0,
-      backgroundColor: Colors.transparent, // Dibuat transparan
+      backgroundColor: Colors.white,
       elevation: 0.0,
       pinned: true,
       stretch: true,
-
-      // Menambahkan title kosong. Ini adalah 'trik' untuk membuat Flutter
-      // secara otomatis menempatkan leading dan actions di tengah vertikal AppBar.
-      title: const Text(''),
-      centerTitle: true,
-
+      automaticallyImplyLeading: false,
       leading: Padding(
         padding: const EdgeInsets.all(8.0),
         child: CircleAvatar(
@@ -40,6 +37,10 @@ class DetailSliverAppBar<T> extends StatelessWidget {
         ),
       ),
       actions: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: favoriteButton, // <-- Tombol favorit ditempatkan di sini
+        ),
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: CircleAvatar(
@@ -54,13 +55,8 @@ class DetailSliverAppBar<T> extends StatelessWidget {
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Image.network(
-          getImage(data),
+          getImageUrl(data),
           fit: BoxFit.cover,
-          loadingBuilder: (context, child, progress) => progress == null
-              ? child
-              : const Center(child: CircularProgressIndicator()),
-          errorBuilder: (context, error, stackTrace) => const Center(
-              child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
         ),
         stretchModes: const [
           StretchMode.blurBackground,
