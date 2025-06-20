@@ -1,141 +1,159 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/widgets/icon_widget.dart';
 import 'package:museum_tugasakhir/widgets/social_icon.dart';
+import 'package:museum_tugasakhir/services/auth_service.dart';
 
 class MainDrawer extends StatelessWidget {
   const MainDrawer({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Mendapatkan status pengguna dari Provider
+    final user = Provider.of<User?>(context);
+    final bool isLoggedIn = user != null;
+
     return Drawer(
       backgroundColor: Colors.white,
-      child: ListView(
-        padding: EdgeInsets.zero,
+      // Menggunakan Column sebagai widget utama untuk kontrol posisi
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [Color(0xFFFFD54F), Color(0xFFFFA000)],
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 40.0, 16.0, 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Bagian Header (tidak berubah)
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [Color(0xFFFFD54F), Color(0xFFFFA000)],
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 20.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Museum Geologi',
-                            style: GoogleFonts.montserrat(
+                      Text('Museum Geologi',
+                          style: GoogleFonts.montserrat(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          Text(
-                            'Bandung',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                      InkWell(
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(
-                            Icons.close,
-                            size: 25,
-                          ),
-                        ),
-                      ),
+                              color: Colors.black87)),
+                      Text('Bandung',
+                          style: GoogleFonts.montserrat(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black54)),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              Center(
-                child: Container(
-                  width: 260,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12.0),
-                    image: const DecorationImage(
-                      image: AssetImage('assets/image/museumgambar.jpg'),
-                      fit: BoxFit.cover,
+                  InkWell(
+                    onTap: () => Navigator.pop(context),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4.0),
+                      child: Icon(Icons.close, size: 28, color: Colors.black54),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              IconWidget(
-                icon: Icons.home,
-                title: 'Home',
-                onTap: () {
-                  // Handle item 1 tap
-                },
-              ),
-              IconWidget(
-                icon: Icons.qr_code_sharp,
-                title: 'Scanner',
-                onTap: () {
-                  // Handle item 2 tap
-                },
-              ),
-              IconWidget(
-                icon: Icons.library_books_sharp,
-                title: 'Collections',
-                onTap: () {
-                  // Handle item 3 tap
-                },
-              ),
-              IconWidget(
-                icon: Icons.settings,
-                title: 'Setting',
-                onTap: () {
-                  // Handle item 4 tap
-                },
-              ),
-              const SizedBox(height: 250),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  SocialIcon(
-                    icon: Icons.facebook,
-                    onTap: () {
-                      // Handle Facebook tap
-                    },
-                  ),
-                  SocialIcon(
-                    icon: FontAwesomeIcons.instagram,
-                    onTap: () {
-                      // Handle Instagram tap
-                    },
-                  ),
-                  SocialIcon(
-                    icon: FontAwesomeIcons.twitter,
-                    onTap: () {
-                      // Handle Twitter tap
-                    },
                   ),
                 ],
               ),
-            ],
+            ),
+          ),
+          const SizedBox(height: 30),
+
+          // Gambar Museum (tidak berubah)
+          Center(
+            child: Container(
+              width: 260,
+              height: 180,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.0),
+                image: const DecorationImage(
+                  image: AssetImage('assets/image/museumgambar.jpg'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // --- BAGIAN MENU UTAMA ---
+          if (isLoggedIn) ...[
+            // JIKA SUDAH LOGIN
+            ListTile(
+              leading: CircleAvatar(
+                backgroundImage: NetworkImage(user.photoURL ?? ''),
+                radius: 20,
+              ),
+              title: Text(
+                'Welcome, ${user.displayName ?? 'Pengguna'}',
+                style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+              ),
+              // Tidak ada subtitle dan onTap lagi
+            ),
+            IconWidget(
+              icon: Icons.favorite_border,
+              title: 'Koleksi Favorit',
+              onTap: () {
+                // TODO: Navigasi ke halaman koleksi favorit
+              },
+            ),
+          ] else ...[
+            // JIKA BELUM LOGIN
+            IconWidget(
+              icon: FontAwesomeIcons.google,
+              title: 'Login dengan Google',
+              onTap: () {
+                AuthService().signInWithGoogle();
+                Navigator.pop(context);
+              },
+            ),
+          ],
+
+          // Tombol Setting yang selalu ada di grup atas
+          IconWidget(
+            icon: Icons.settings,
+            title: 'Setting',
+            onTap: () {
+              // TODO: Navigasi ke halaman setting
+            },
+          ),
+
+          // Spacer untuk mendorong sisa item ke bawah
+          const Spacer(),
+
+          // --- BAGIAN BAWAH YANG SELALU MENEMPEL ---
+
+          // Tombol Logout hanya muncul jika sudah login
+          if (isLoggedIn) ...[
+            const Divider(height: 1, thickness: 1),
+            IconWidget(
+              icon: Icons.logout,
+              title: 'Logout',
+              onTap: () {
+                AuthService().signOut();
+                Navigator.pop(context);
+              },
+            ),
+          ],
+
+          // --- Ikon Sosial Media ---
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                SocialIcon(icon: Icons.facebook, onTap: () {}),
+                SocialIcon(icon: FontAwesomeIcons.instagram, onTap: () {}),
+                SocialIcon(icon: FontAwesomeIcons.twitter, onTap: () {}),
+              ],
+            ),
           ),
         ],
       ),
