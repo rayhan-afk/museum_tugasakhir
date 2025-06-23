@@ -20,7 +20,7 @@ class ScannerScreen extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Text(
-              'Fitur untuk memindai koleksi akan ada di sini.',
+              'Fitur untuk memindai koleksi akan ada di sini..',
               style: TextStyle(fontSize: 16),
               textAlign: TextAlign.center,
             ),
