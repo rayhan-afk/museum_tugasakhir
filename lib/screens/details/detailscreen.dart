@@ -280,3 +280,5 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     );
   }
 }
+
+//Rayhan Abduhuda - 193040044
