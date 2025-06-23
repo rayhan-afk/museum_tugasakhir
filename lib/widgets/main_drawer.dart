@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:museum_tugasakhir/screens/comments_screen.dart';
 import 'package:museum_tugasakhir/screens/favorite_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,7 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 // Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/widgets/icon_widget.dart';
 import 'package:museum_tugasakhir/widgets/social_icon.dart';
-import 'package:museum_tugasakhir/services/auth_service.dart';
+import 'package:museum_tugasakhir/services/auth_service.dart'; // <-- IMPORT HALAMAN BARU
 
 class MainDrawer extends StatelessWidget {
   const MainDrawer({Key? key}) : super(key: key);
@@ -99,16 +100,28 @@ class MainDrawer extends StatelessWidget {
               ),
             ),
             IconWidget(
-              icon: Icons.favorite, // Ikon diubah menjadi terisi
-              color: Colors.red, // Warna ikon diubah (opsional)
+              icon: Icons.favorite,
+              color: Colors.red,
               title: 'Koleksi Favorit',
               onTap: () {
-                // # PERUBAHAN: Navigasi ke halaman favorit
-                Navigator.pop(context); // Tutup drawer dulu
+                Navigator.pop(context); // Tutup drawer
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (context) => const FavoritesScreen()),
+                );
+              },
+            ),
+            // # PERUBAHAN: Tombol Komentar Saya ditambahkan di sini
+            IconWidget(
+              icon: Icons.comment_outlined,
+              title: 'Komentar Saya',
+              onTap: () {
+                Navigator.pop(context); // Tutup drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const MyCommentsScreen()),
                 );
               },
             ),
@@ -118,17 +131,10 @@ class MainDrawer extends StatelessWidget {
               icon: FontAwesomeIcons.google,
               title: 'Login dengan Google',
               onTap: () async {
-                // # PERBAIKAN: Simpan referensi sebelum menutup drawer
                 final navigator = Navigator.of(context);
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-                // Tutup drawer terlebih dahulu
                 navigator.pop();
-
-                // Panggil fungsi login dan tunggu hasilnya
                 final user = await AuthService().signInWithGoogle();
-
-                // Tampilkan pesan jika login berhasil
                 if (user != null) {
                   scaffoldMessenger.showSnackBar(
                     SnackBar(
@@ -164,11 +170,8 @@ class MainDrawer extends StatelessWidget {
               onTap: () async {
                 final navigator = Navigator.of(context);
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
-
                 navigator.pop();
-
                 await AuthService().signOut();
-
                 scaffoldMessenger.showSnackBar(
                   const SnackBar(
                     content: Text('Anda telah berhasil logout.'),

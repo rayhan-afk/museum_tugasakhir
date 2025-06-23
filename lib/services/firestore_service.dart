@@ -1,12 +1,17 @@
+// File: lib/services/firestore_service.dart
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  // Mendapatkan referensi ke semua collection yang kita gunakan
   CollectionReference<Map<String, dynamic>> get _usersCollection =>
       _db.collection('users');
   CollectionReference<Map<String, dynamic>> get _koleksiCollection =>
       _db.collection('koleksi');
+  CollectionReference<Map<String, dynamic>> get _commentsCollection =>
+      _db.collection('comments');
 
   /// Menambah atau menghapus item dari favorit pengguna menggunakan Transaction.
   Future<void> toggleFavorite(
@@ -16,23 +21,17 @@ class FirestoreService {
     final mainItemRef = _koleksiCollection.doc(itemId);
 
     return _db.runTransaction((transaction) async {
-      // # PERBAIKAN: Lakukan semua operasi BACA (get) terlebih dahulu
       final favoriteDoc = await transaction.get(userFavoriteRef);
       final mainItemDoc = await transaction.get(mainItemRef);
 
       if (favoriteDoc.exists) {
-        // --- Jika item SUDAH difavoritkan (logika unfavorite) ---
-        // Lakukan semua operasi TULIS (delete, update) setelah membaca
         transaction.delete(userFavoriteRef);
-
         final currentCount = mainItemDoc.data()?['favoriteCount'] ?? 0;
         if (currentCount > 0) {
           transaction
               .update(mainItemRef, {'favoriteCount': FieldValue.increment(-1)});
         }
       } else {
-        // --- Jika item BELUM difavoritkan (logika favorite) ---
-        // Lakukan semua operasi TULIS (set, update)
         transaction.set(userFavoriteRef, itemData);
         transaction
             .update(mainItemRef, {'favoriteCount': FieldValue.increment(1)});
@@ -40,7 +39,7 @@ class FirestoreService {
     });
   }
 
-  /// Stream untuk mendengarkan status favorit sebuah item secara real-time. (Tidak Berubah)
+  /// Stream untuk mendengarkan status favorit sebuah item secara real-time.
   Stream<bool> isFavoritedStream(String userId, String itemId) {
     return _usersCollection
         .doc(userId)
@@ -50,13 +49,23 @@ class FirestoreService {
         .map((snapshot) => snapshot.exists);
   }
 
-  /// Stream untuk mendapatkan semua item favorit dari seorang pengguna. (Tidak Berubah)
+  /// Stream untuk mendapatkan semua item favorit dari seorang pengguna.
   Stream<QuerySnapshot<Map<String, dynamic>>> getFavoritesStream(
       String userId) {
     return _usersCollection
         .doc(userId)
         .collection('favorites')
         .orderBy('addedAt', descending: true)
+        .snapshots();
+  }
+
+  // # PERBAIKAN: Fungsi ini sekarang berada DI DALAM kelas FirestoreService
+  /// Stream untuk mendapatkan semua komentar dari seorang pengguna.
+  Stream<QuerySnapshot<Map<String, dynamic>>> getMyCommentsStream(
+      String userId) {
+    return _commentsCollection
+        .where('authorId', isEqualTo: userId)
+        .orderBy('timestamp', descending: true)
         .snapshots();
   }
 }
