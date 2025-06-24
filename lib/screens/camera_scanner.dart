@@ -20,6 +20,7 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
   bool _isProcessing = false;
 
   // --- Fungsi pembantu untuk membuat model data dan halaman detail ---
+  // (Fungsi ini sama seperti yang kita gunakan di halaman lain)
   Widget _createDetailScreen(Object data) {
     if (data is ArtefakData) return ArtefakDetailScreen(artefakData: data);
     if (data is BatuanData) return BatuanDetailScreen(batuanData: data);
@@ -47,55 +48,78 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
 
   // --- Fungsi utama untuk memproses hasil scan ---
   void _processBarcode(BarcodeCapture capture) async {
+    // Jika sedang memproses, jangan lakukan apa-apa untuk mencegah scan ganda
     if (_isProcessing) return;
+
+    // Tandai bahwa kita sedang memproses agar tidak ada scan ganda
     setState(() {
       _isProcessing = true;
     });
 
+    // Ambil kode mentah dari hasil scan (ini adalah ID dokumen)
     final String? scannedId = capture.barcodes.first.rawValue;
 
+    // Cek jika ID valid
     if (scannedId == null || scannedId.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('QR Code tidak valid.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kode QR tidak valid.')),
+      );
       if (mounted)
         setState(() {
           _isProcessing = false;
-        });
+        }); // Buka kembali pemrosesan
       return;
     }
 
     try {
+      // Cari dokumen di Firestore berdasarkan ID yang di-scan
       final docSnapshot = await FirebaseFirestore.instance
           .collection('koleksi')
           .doc(scannedId)
           .get();
+
       if (docSnapshot.exists && context.mounted) {
+        // --- JIKA DOKUMEN DITEMUKAN ---
         final data = docSnapshot.data()!;
         final itemData = _createDataModel(data, docSnapshot.id);
+
         if (itemData != null) {
+          // Jeda kamera agar tidak terus memindai saat berpindah halaman
           await _scannerController.stop();
+          // Navigasi ke halaman detail
           await Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                   builder: (context) => _createDetailScreen(itemData)));
+          // Setelah kembali dari halaman detail, nyalakan lagi kamera (jika diperlukan)
+          // Jika tidak ingin kamera otomatis nyala, hapus baris di bawah ini
+          if (mounted) await _scannerController.start();
         }
       } else {
+        // --- JIKA DOKUMEN TIDAK DITEMUKAN ---
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Koleksi tidak ditemukan.')));
+          const SnackBar(content: Text('Koleksi tidak ditemukan.')),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Terjadi kesalahan saat mencari koleksi.')));
+      // Jika terjadi error lain (misal, masalah jaringan)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Terjadi kesalahan saat mencari koleksi.')),
+      );
     }
 
-    if (mounted)
+    // Setelah semua proses selesai, buka kembali pemrosesan agar bisa scan lagi
+    if (mounted) {
       setState(() {
         _isProcessing = false;
       });
+    }
   }
 
   @override
   void dispose() {
+    // Selalu dispose controller saat widget tidak lagi digunakan
     _scannerController.dispose();
     super.dispose();
   }
@@ -108,7 +132,8 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
           // Widget utama untuk menampilkan kamera scanner
           MobileScanner(
             controller: _scannerController,
-            onDetect: _processBarcode,
+            onDetect:
+                _processBarcode, // Fungsi yang akan dipanggil saat QR code terdeteksi
           ),
 
           // Lapisan UI tambahan di atas kamera (overlay)
@@ -130,7 +155,7 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
             left: 0,
             right: 0,
             child: Text(
-              'Arahkan kamera ke QR Code',
+              'Arahkan kamera ke Kode QR',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,
@@ -171,7 +196,7 @@ class QrScannerOverlayShape extends ShapeBorder {
   QrScannerOverlayShape({
     this.borderColor = Colors.white,
     this.borderWidth = 8.0,
-    this.overlayColorOpacity = 0.8,
+    this.overlayColorOpacity = 0.7,
     this.borderRadius = 12,
     required this.cutOutSize,
   });
