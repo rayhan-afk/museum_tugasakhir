@@ -15,7 +15,7 @@ class Tabs extends StatefulWidget {
 }
 
 class _TabsState extends State<Tabs> {
-  final pages = const [
+  final pages = [
     MuseumScreen(),
     ScannerScreen(),
     CollectionsScreen(),
