@@ -7,12 +7,9 @@ class MuseumScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Informasi Museum Geologi Bandung'),
-      ),
+      appBar: AppBar(title: const Text('Informasi Museum Geologi Bandung')),
       body: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         // Mengambil data dari Firestore
-        // Perhatikan 'info_utama' adalah ID dokumen yang kita buat tadi
         future: FirebaseFirestore.instance
             .collection('museum_info')
             .doc('info_utama') // Ambil dokumen dengan ID 'info_utama'
@@ -74,26 +71,34 @@ class MuseumScreen extends StatelessWidget {
                             height: 200,
                             color: Colors.grey[300],
                             child: const Center(
-                                child: Text('Gambar tidak bisa dimuat')),
-                          );
-                        },
-                        // Tambahkan loadingBuilder untuk menampilkan indikator saat gambar dimuat
-                        loadingBuilder: (BuildContext context, Widget child,
-                            ImageChunkEvent? loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            height: 200,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes !=
-                                        null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
+                              child: Text('Gambar tidak bisa dimuat'),
                             ),
                           );
                         },
+                        // Tambahkan loadingBuilder untuk menampilkan indikator saat gambar dimuat
+                        loadingBuilder:
+                            (
+                              BuildContext context,
+                              Widget child,
+                              ImageChunkEvent? loadingProgress,
+                            ) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                height: 200,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value:
+                                        loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                  .cumulativeBytesLoaded /
+                                              loadingProgress
+                                                  .expectedTotalBytes!
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            },
                       ),
                     ),
                   if (urlGambar != null && urlGambar.isNotEmpty)
@@ -101,39 +106,37 @@ class MuseumScreen extends StatelessWidget {
 
                   Text(
                     namaMuseum,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8.0),
                   Text(
                     'Alamat:',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(alamat, style: Theme.of(context).textTheme.bodyLarge),
                   const SizedBox(height: 16.0),
                   Text(
                     'Deskripsi:',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(deskripsi, style: Theme.of(context).textTheme.bodyLarge),
                   const SizedBox(height: 16.0),
                   Text(
                     'Jam Operasional:',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  Text(jamOperasional,
-                      style: Theme.of(context).textTheme.bodyLarge),
+                  Text(
+                    jamOperasional,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
                 ],
               ),
             );

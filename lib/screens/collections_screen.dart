@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/screens/categories/category_items_screen.dart';
-import 'package:museum_tugasakhir/screens/details/search.dart';
+import 'package:museum_tugasakhir/screens/search.dart';
 import 'package:museum_tugasakhir/widgets/categories_tile.dart';
 import 'package:museum_tugasakhir/data/data.dart';
 import 'package:museum_tugasakhir/screens/details/details.dart';
@@ -49,7 +49,7 @@ class CollectionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      // backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Column(
           children: [

@@ -48,14 +48,24 @@ class CategoryItemsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(categoryName,
-            style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.bold, color: Colors.black)),
-        backgroundColor: Colors.white,
+        title: Text(
+          categoryName,
+          style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.bold, color: Colors.black),
+        ),
         elevation: 1,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
           onPressed: () => Navigator.pop(context),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [Color(0xFFFFD54F), Color(0xFFFFA000)],
+            ),
+          ),
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(

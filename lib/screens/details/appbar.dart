@@ -68,9 +68,10 @@ class DetailSliverAppBar<T> extends StatelessWidget {
         child: Container(
           height: 32.0,
           alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            // Menggunakan warna latar belakang dari tema
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(32.0),
               topRight: Radius.circular(32.0),
             ),
@@ -79,7 +80,8 @@ class DetailSliverAppBar<T> extends StatelessWidget {
             width: 40.0,
             height: 5.0,
             decoration: BoxDecoration(
-              color: Colors.black,
+              // Menggunakan warna divider dari tema
+              color: Theme.of(context).dividerColor,
               borderRadius: BorderRadius.circular(100.0),
             ),
           ),

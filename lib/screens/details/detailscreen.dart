@@ -1,5 +1,3 @@
-// File: lib/screens/details/detailscreen.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,7 +14,8 @@ class DetailScreen<T> extends StatefulWidget {
   final String Function(T) getTitle;
   final String Function(T) getYear;
   final String Function(T) getDescription;
-  final String Function(T) getImageUrl;
+  final String Function(T) getImageUrl; // <-- Untuk gambar utama di AppBar
+  final List<String> Function(T) getImageUrls; // <-- Untuk galeri
   final String Function(T) getCategoryIconPath;
   final String Function(T) getItemId;
   final Map<String, dynamic> Function(T) toMap;
@@ -28,6 +27,7 @@ class DetailScreen<T> extends StatefulWidget {
     required this.getYear,
     required this.getDescription,
     required this.getImageUrl,
+    required this.getImageUrls,
     required this.getCategoryIconPath,
     required this.getItemId,
     required this.toMap,
@@ -39,13 +39,28 @@ class DetailScreen<T> extends StatefulWidget {
 
 class _DetailScreenState<T> extends State<DetailScreen<T>> {
   final FirestoreService _firestoreService = FirestoreService();
-  // Controller untuk mengelola input teks pada kolom komentar
   final _commentController = TextEditingController();
+
+  // Controller dan state untuk galeri gambar di bawah
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(() {
+      if (_pageController.page?.round() != _currentPage) {
+        setState(() {
+          _currentPage = _pageController.page!.round();
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
-    // Selalu dispose controller saat widget tidak lagi digunakan untuk mencegah memory leak
     _commentController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -69,7 +84,46 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     }
   }
 
-  // --- FUNGSI BARU UNTUK MENGIRIM KOMENTAR ---
+  // --- FUNGSI BARU UNTUK MENAMPILKAN GAMBAR ZOOMABLE ---
+  void _showZoomableImage(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87, // Latar belakang semi-transparan
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(10),
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              // Widget untuk zoom dan pan gambar
+              InteractiveViewer(
+                panEnabled: true,
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Image.network(imageUrl),
+              ),
+              // Tombol close di pojok kanan atas
+              Positioned(
+                top: 0,
+                right: 0,
+                child: IconButton(
+                  icon: const CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.close, color: Colors.black),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _postComment() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -80,49 +134,57 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     }
 
     final commentText = _commentController.text.trim();
-    if (commentText.isEmpty) {
-      return;
-    }
+    if (commentText.isEmpty) return;
 
-    // Mengambil data item yang akan disimpan bersama komentar
     final T currentItem = widget.data;
-
-    // Kirim data ke collection 'comments' di Firestore
     await FirebaseFirestore.instance.collection('comments').add({
       'itemId': widget.getItemId(currentItem),
       'text': commentText,
       'authorName': user.displayName ?? 'Pengguna Anonim',
       'authorId': user.uid,
       'timestamp': FieldValue.serverTimestamp(),
-
-      // # PERUBAHAN: Tambahkan field-field ini
       'itemTitle': widget.getTitle(currentItem),
       'itemImageUrl': widget.getImageUrl(currentItem),
-      'itemCategory': (widget
-          .toMap(currentItem))['category'], // Ambil kategori dari toMap()
     });
 
     _commentController.clear();
     FocusScope.of(context).unfocus();
   }
 
+  // Widget untuk membuat titik-titik indikator galeri
+  Widget _buildPageIndicator(bool isActive) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      margin: const EdgeInsets.symmetric(horizontal: 4.0),
+      height: 8.0,
+      width: isActive ? 24.0 : 8.0,
+      decoration: BoxDecoration(
+        color: isActive
+            ? Theme.of(context).primaryColor
+            : Colors.grey.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<User?>(context);
     final itemId = widget.getItemId(widget.data);
+    final imageUrls = widget.getImageUrls(widget.data);
 
     return Scaffold(
       body: CustomScrollView(
         slivers: <Widget>[
-          // --- BAGIAN APPBAR & FAVORIT (Tidak Berubah) ---
+          // --- BAGIAN APPBAR (KEMBALI KE VERSI SEDERHANA) ---
           StreamBuilder<bool>(
             stream: user != null
                 ? _firestoreService.isFavoritedStream(user.uid, itemId)
                 : Stream.value(false),
             builder: (context, snapshot) {
-              final bool isFavorited = snapshot.data ?? false;
+              final isFavorited = snapshot.data ?? false;
               final favoriteButton = CircleAvatar(
-                backgroundColor: Colors.white.withOpacity(0.9),
+                backgroundColor: Colors.white.withOpacity(0.8),
                 child: IconButton(
                   icon: Icon(
                     isFavorited ? Icons.favorite : Icons.favorite_border,
@@ -134,6 +196,7 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
 
               return DetailSliverAppBar(
                 data: widget.data,
+                // Mengirim satu gambar utama ke AppBar
                 getImageUrl: widget.getImageUrl,
                 getCategoryIconPath: widget.getCategoryIconPath,
                 favoriteButton: favoriteButton,
@@ -141,14 +204,14 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
             },
           ),
 
-          // --- BAGIAN DESKRIPSI (Tidak Berubah) ---
+          // --- BAGIAN DESKRIPSI & KONTEN LAINNYA ---
           SliverToBoxAdapter(
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Deskripsi Item
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,27 +233,61 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                   const SizedBox(height: 16.0),
                   const Divider(),
                   const SizedBox(height: 16.0),
-                  Text(widget.getDescription(widget.data),
-                      style: GoogleFonts.montserrat(fontSize: 14, height: 1.5)),
-                ],
-              ),
-            ),
-          ),
+                  Text(
+                    widget.getDescription(widget.data),
+                    style: GoogleFonts.montserrat(fontSize: 14, height: 1.5),
+                  ),
 
-          // --- # PERUBAHAN: BAGIAN KOMENTAR DITAMBAHKAN DI SINI ---
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                  // # PERUBAHAN: GALERI GAMBAR DITAMBAHKAN DI SINI
+                  if (imageUrls.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text('Galeri Gambar',
+                        style: GoogleFonts.montserrat(
+                            fontSize: 22, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 200, // Tinggi galeri
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: imageUrls.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 4.0),
+                            child: GestureDetector(
+                              // <-- DITAMBAHKAN: Agar bisa di-klik
+                              onTap: () {
+                                _showZoomableImage(context, imageUrls[index]);
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  imageUrls[index],
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Indikator Titik-titik
+                    if (imageUrls.length > 1)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(imageUrls.length, (index) {
+                          return _buildPageIndicator(index == _currentPage);
+                        }),
+                      )
+                  ],
+
+                  // Bagian Komentar
                   const Divider(height: 40),
                   Text('Komentar',
                       style: GoogleFonts.montserrat(
                           fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
-
-                  // Form untuk input komentar
                   if (user != null)
                     Row(
                       children: [
@@ -198,8 +295,7 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                           child: TextField(
                             controller: _commentController,
                             decoration: InputDecoration(
-                              hintText:
-                                  'Tulis komentar sebagai ${user.displayName}...',
+                              hintText: 'Tulis komentar...',
                               border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12)),
                             ),
@@ -208,24 +304,12 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                         IconButton(
                           icon: const Icon(Icons.send),
                           onPressed: _postComment,
-                          color: Theme.of(context).primaryColor,
                         ),
                       ],
                     )
                   else
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8)),
-                      child: const Text(
-                          'Silakan login untuk dapat berkomentar.',
-                          textAlign: TextAlign.center),
-                    ),
-
+                    const Text('Silakan login untuk berkomentar.'),
                   const SizedBox(height: 20),
-
-                  // Daftar komentar dari Firestore
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('comments')
@@ -233,24 +317,16 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                         .orderBy('timestamp', descending: true)
                         .snapshots(),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
+                      if (!snapshot.hasData)
+                        return const Center(child: CircularProgressIndicator());
+                      if (snapshot.data!.docs.isEmpty)
                         return const Center(
-                            child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: CircularProgressIndicator()));
-                      }
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return const Center(
-                            child: Padding(
-                                padding: EdgeInsets.all(20.0),
-                                child:
-                                    Text('Jadilah yang pertama berkomentar!')));
-                      }
+                            child: Text('Jadilah yang pertama berkomentar!'));
+
                       return ListView.builder(
                         padding: EdgeInsets.zero,
-                        shrinkWrap: true, // Wajib di dalam Column/ScrollView
-                        physics:
-                            const NeverScrollableScrollPhysics(), // Wajib agar tidak ada double scroll
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: snapshot.data!.docs.length,
                         itemBuilder: (context, index) {
                           final commentData = snapshot.data!.docs[index].data()
@@ -270,15 +346,12 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                       );
                     },
                   ),
-                  const SizedBox(height: 40), // Beri jarak di bagian bawah
                 ],
               ),
             ),
-          )
+          ),
         ],
       ),
     );
   }
 }
-
-//Rayhan Abduhuda - 193040044

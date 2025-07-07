@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:museum_tugasakhir/providers/theme_providers.dart';
 import 'package:museum_tugasakhir/screens/comments_screen.dart';
 import 'package:museum_tugasakhir/screens/favorite_screen.dart';
 import 'package:provider/provider.dart';
@@ -11,24 +12,26 @@ import 'package:firebase_auth/firebase_auth.dart';
 // Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/widgets/icon_widget.dart';
 import 'package:museum_tugasakhir/widgets/social_icon.dart';
-import 'package:museum_tugasakhir/services/auth_service.dart'; // <-- IMPORT HALAMAN BARU
+import 'package:museum_tugasakhir/services/auth_service.dart';
 
 class MainDrawer extends StatelessWidget {
   const MainDrawer({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Mendapatkan status pengguna dari Provider
+    // Mendapatkan status pengguna dan tema dari Provider
     final user = Provider.of<User?>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final bool isLoggedIn = user != null;
+    final bool isDarkMode = themeProvider.themeMode == ThemeMode.dark;
 
     return Drawer(
-      backgroundColor: Colors.white,
-      // Menggunakan Column sebagai widget utama untuk kontrol posisi
+      backgroundColor:
+          Theme.of(context).scaffoldBackgroundColor, // Menggunakan warna tema
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // Bagian Header (tidak berubah)
+          // Bagian Header
           Container(
             width: double.infinity,
             decoration: const BoxDecoration(
@@ -58,11 +61,20 @@ class MainDrawer extends StatelessWidget {
                               color: Colors.black87)),
                     ],
                   ),
-                  InkWell(
-                    onTap: () => Navigator.pop(context),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4.0),
-                      child: Icon(Icons.close, size: 28, color: Colors.black54),
+                  // # PERUBAHAN: Tombol diubah dan dibungkus CircleAvatar
+                  CircleAvatar(
+                    backgroundColor: Colors.black
+                        .withOpacity(0.1), // Latar belakang lingkaran
+                    child: IconButton(
+                      icon: Icon(
+                        isDarkMode ? Icons.wb_sunny : Icons.nightlight_round,
+                        // Matahari warna putih, bulan warna hitam
+                        color: isDarkMode ? Colors.white : Colors.black87,
+                      ),
+                      onPressed: () {
+                        // Memanggil fungsi toggleTheme dengan nilai kebalikannya
+                        themeProvider.toggleTheme(!isDarkMode);
+                      },
                     ),
                   ),
                 ],
@@ -71,7 +83,7 @@ class MainDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 30),
 
-          // Gambar Museum (tidak berubah)
+          // Gambar Museum
           Center(
             child: Container(
               width: 260,
@@ -104,7 +116,7 @@ class MainDrawer extends StatelessWidget {
               color: Colors.red,
               title: 'Koleksi Favorit',
               onTap: () {
-                Navigator.pop(context); // Tutup drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -112,12 +124,11 @@ class MainDrawer extends StatelessWidget {
                 );
               },
             ),
-            // # PERUBAHAN: Tombol Komentar Saya ditambahkan di sini
             IconWidget(
               icon: Icons.comment_outlined,
               title: 'Komentar Saya',
               onTap: () {
-                Navigator.pop(context); // Tutup drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(

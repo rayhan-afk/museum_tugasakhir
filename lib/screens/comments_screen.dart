@@ -4,9 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:museum_tugasakhir/services/firestore_service.dart';
+// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/data/data.dart';
 import 'package:museum_tugasakhir/screens/details/details.dart';
+import 'package:museum_tugasakhir/services/firestore_service.dart';
 
 // Fungsi helper diletakkan di sini agar bisa dipakai bersama
 Widget _createDetailScreen(Object data) {
@@ -38,20 +39,17 @@ class MyCommentsScreen extends StatelessWidget {
 
   // Fungsi untuk menangani navigasi saat kartu komentar di-klik
   Future<void> _navigateToDetail(BuildContext context, String itemId) async {
-    // 1. Ambil data lengkap item dari collection 'koleksi'
     final docSnapshot = await FirebaseFirestore.instance
         .collection('koleksi')
         .doc(itemId)
         .get();
 
     if (docSnapshot.exists) {
-      // 2. Jika dokumen ditemukan, buat objek data yang benar
       final data = docSnapshot.data()!;
       final category = data['category'] ?? '';
       final itemData = _createDataModel(category, data, docSnapshot.id);
 
       if (itemData != null && context.mounted) {
-        // 3. Navigasi ke halaman detail yang sesuai
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -59,12 +57,41 @@ class MyCommentsScreen extends StatelessWidget {
         );
       }
     } else {
-      // Handle jika item asli sudah dihapus
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Item koleksi ini mungkin sudah tidak tersedia.')),
       );
     }
+  }
+
+  // # FUNGSI BARU: Untuk menampilkan dialog konfirmasi hapus
+  void _showDeleteConfirmationDialog(BuildContext context, String commentId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: const Text('Hapus Komentar?'),
+          content: const Text(
+              'Apakah Anda yakin ingin menghapus komentar ini? Tindakan ini tidak dapat dibatalkan.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Batal'),
+              onPressed: () {
+                Navigator.of(ctx).pop(); // Tutup dialog
+              },
+            ),
+            TextButton(
+              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                // Panggil fungsi hapus dari service
+                FirestoreService().deleteComment(commentId);
+                Navigator.of(ctx).pop(); // Tutup dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -102,9 +129,8 @@ class MyCommentsScreen extends StatelessWidget {
                   itemCount: snapshot.data!.docs.length,
                   padding: const EdgeInsets.all(10),
                   itemBuilder: (context, index) {
-                    final data = snapshot.data!.docs[index].data()!
-                        as Map<String, dynamic>;
-                    // # PERBAIKAN: Ambil URL gambar dengan pengecekan
+                    final doc = snapshot.data!.docs[index];
+                    final data = doc.data()! as Map<String, dynamic>;
                     final imageUrl = data['itemImageUrl'] as String? ?? '';
 
                     return Card(
@@ -113,40 +139,19 @@ class MyCommentsScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
-
-                        // # PERBAIKAN: Widget gambar yang lebih robust
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(16, 12, 8, 12),
                         leading: SizedBox(
                           width: 60,
                           height: 60,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8.0),
-                            // Cek apakah URL valid sebelum digunakan
                             child: imageUrl.isNotEmpty &&
                                     imageUrl.startsWith('http')
-                                ? Image.network(
-                                    imageUrl,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child,
-                                            progress) =>
-                                        progress == null
-                                            ? child
-                                            : const Center(
-                                                child:
-                                                    CircularProgressIndicator(
-                                                        strokeWidth: 2.0)),
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            const Icon(Icons.broken_image,
-                                                color: Colors.grey),
-                                  )
-                                : const Icon(Icons.photo,
-                                    color: Colors
-                                        .grey), // Placeholder jika URL kosong/tidak valid
+                                ? Image.network(imageUrl, fit: BoxFit.cover)
+                                : const Icon(Icons.photo, color: Colors.grey),
                           ),
                         ),
-
                         title: Text(
                           '"${data['text'] ?? ''}"',
                           style: GoogleFonts.montserrat(
@@ -155,13 +160,19 @@ class MyCommentsScreen extends StatelessWidget {
                         subtitle: Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
-                            'Komentar pada : ${data['itemTitle'] ?? 'Koleksi'}',
+                            'pada: ${data['itemTitle'] ?? 'Koleksi'}',
                             style: GoogleFonts.montserrat(
                                 fontWeight: FontWeight.bold),
                           ),
                         ),
                         isThreeLine: true,
-                        trailing: const Icon(Icons.chevron_right),
+                        // # PERUBAHAN: Menambahkan tombol hapus di trailing
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline,
+                              color: Colors.red),
+                          onPressed: () =>
+                              _showDeleteConfirmationDialog(context, doc.id),
+                        ),
                         onTap: () => _navigateToDetail(context, data['itemId']),
                       ),
                     );

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:museum_tugasakhir/services/firebase_options.dart';
+import 'package:museum_tugasakhir/providers/theme_providers.dart';
 import 'package:provider/provider.dart';
 
-// Ganti 'museum_tugasakhir' dengan nama folder proyek Anda
+// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/services/auth_service.dart';
 import 'package:museum_tugasakhir/screens/tabs.dart'; // Import halaman Tabs
+import 'services/firebase_options.dart';
 
 void main() async {
   // Memastikan semua binding Flutter sudah siap sebelum menjalankan kode
@@ -18,14 +19,16 @@ void main() async {
 
   runApp(
     // Membungkus seluruh aplikasi dengan MultiProvider.
-    // Ini memungkinkan kita untuk menyediakan beberapa 'state' atau 'service'.
     MultiProvider(
       providers: [
-        // Menyediakan stream status otentikasi ke seluruh aplikasi.
-        // Setiap kali ada perubahan (login/logout), widget yang mendengarkan akan otomatis update.
+        // 1. Provider untuk status otentikasi (tetap ada)
         StreamProvider<User?>.value(
           value: AuthService().authStateChanges,
           initialData: null,
+        ),
+        // 2. Provider untuk tema (BARU)
+        ChangeNotifierProvider(
+          create: (context) => ThemeProvider(),
         ),
       ],
       child: const MyApp(), // Aplikasi utama Anda
@@ -39,18 +42,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // "Mendengarkan" perubahan dari ThemeProvider
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
-      title: 'Museum Geologi App', // Judul aplikasi Anda
-      debugShowCheckedModeBanner: false, // Menghilangkan banner debug
-      theme: ThemeData(
-        // Konfigurasi tema utama aplikasi Anda
-        primarySwatch: Colors.orange, // Menggunakan tema oranye/kuning
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
+      title: 'Museum Geologi App',
+      debugShowCheckedModeBanner: false,
+
+      // # PERUBAHAN UTAMA: Mengatur tema aplikasi
+      theme: MyThemes.lightTheme, // Tema saat mode terang
+      darkTheme: MyThemes.darkTheme, // Tema saat mode gelap
+      themeMode: themeProvider.themeMode, // Menggunakan mode yang sedang aktif
+
       // Mengarahkan home ke widget Tabs()
       home: const Tabs(), // Halaman utama aplikasi Anda
     );
   }
 }
-
-//rayhan abduhuda - 193040044

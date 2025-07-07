@@ -16,10 +16,12 @@ class ArtefakDetailScreen extends StatelessWidget {
       getTitle: (data) => data.title,
       getYear: (data) => data.year,
       getDescription: (data) => data.description,
-      getImageUrl: (data) => data.imageUrl, // Menggunakan 'imageUrl'
+      // # PERUBAHAN: Mengirim daftar URL gambar
+      getImageUrl: (data) => data.imageUrl,
+      getImageUrls: (data) => data.imageUrls,
       getCategoryIconPath: (data) => 'assets/image/artefak.png',
-      getItemId: (data) => data.id, // DITAMBAHKAN: Mengirim ID item
-      toMap: (data) => data.toMap(), // DITAMBAHKAN: Mengirim fungsi toMap
+      getItemId: (data) => data.id,
+      toMap: (data) => data.toMap(),
     );
   }
 }
@@ -37,10 +39,12 @@ class BatuanDetailScreen extends StatelessWidget {
       getTitle: (data) => data.title,
       getYear: (data) => data.year,
       getDescription: (data) => data.description,
-      getImageUrl: (data) => data.imageUrl, // Menggunakan 'imageUrl'
+      // # PERUBAHAN: Mengirim daftar URL gambar
+      getImageUrl: (data) => data.imageUrl,
+      getImageUrls: (data) => data.imageUrls,
       getCategoryIconPath: (data) => 'assets/image/batuan.png',
-      getItemId: (data) => data.id, // DITAMBAHKAN: Mengirim ID item
-      toMap: (data) => data.toMap(), // DITAMBAHKAN: Mengirim fungsi toMap
+      getItemId: (data) => data.id,
+      toMap: (data) => data.toMap(),
     );
   }
 }
@@ -58,10 +62,12 @@ class FosilDetailScreen extends StatelessWidget {
       getTitle: (data) => data.title,
       getYear: (data) => data.year,
       getDescription: (data) => data.description,
-      getImageUrl: (data) => data.imageUrl, // Menggunakan 'imageUrl'
+      // # PERUBAHAN: Mengirim daftar URL gambar
+      getImageUrl: (data) => data.imageUrl,
+      getImageUrls: (data) => data.imageUrls,
       getCategoryIconPath: (data) => 'assets/image/fosil.png',
-      getItemId: (data) => data.id, // DITAMBAHKAN: Mengirim ID item
-      toMap: (data) => data.toMap(), // DITAMBAHKAN: Mengirim fungsi toMap
+      getItemId: (data) => data.id,
+      toMap: (data) => data.toMap(),
     );
   }
 }
@@ -79,10 +85,12 @@ class MineralDetailScreen extends StatelessWidget {
       getTitle: (data) => data.title,
       getYear: (data) => data.year,
       getDescription: (data) => data.description,
-      getImageUrl: (data) => data.imageUrl, // Menggunakan 'imageUrl'
+      // # PERUBAHAN: Mengirim daftar URL gambar
+      getImageUrl: (data) => data.imageUrl,
+      getImageUrls: (data) => data.imageUrls,
       getCategoryIconPath: (data) => 'assets/image/mineral.png',
-      getItemId: (data) => data.id, // DITAMBAHKAN: Mengirim ID item
-      toMap: (data) => data.toMap(), // DITAMBAHKAN: Mengirim fungsi toMap
+      getItemId: (data) => data.id,
+      toMap: (data) => data.toMap(),
     );
   }
 }

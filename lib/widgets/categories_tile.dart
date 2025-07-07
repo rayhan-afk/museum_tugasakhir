@@ -36,7 +36,6 @@ class CategoriesTile extends StatelessWidget {
           style: GoogleFonts.montserrat(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: const Color.fromARGB(255, 79, 76, 76),
           ),
         )
       ],

@@ -59,7 +59,6 @@ class FirestoreService {
         .snapshots();
   }
 
-  // # PERBAIKAN: Fungsi ini sekarang berada DI DALAM kelas FirestoreService
   /// Stream untuk mendapatkan semua komentar dari seorang pengguna.
   Stream<QuerySnapshot<Map<String, dynamic>>> getMyCommentsStream(
       String userId) {
@@ -67,5 +66,19 @@ class FirestoreService {
         .where('authorId', isEqualTo: userId)
         .orderBy('timestamp', descending: true)
         .snapshots();
+  }
+
+  // # FUNGSI BARU: Untuk menghapus dokumen komentar berdasarkan ID-nya.
+  /// Menghapus sebuah komentar dari collection 'comments'.
+  ///
+  /// [commentId] adalah ID unik dari dokumen komentar yang akan dihapus.
+  Future<void> deleteComment(String commentId) async {
+    try {
+      await _commentsCollection.doc(commentId).delete();
+    } catch (e) {
+      print('Error saat menghapus komentar: $e');
+      // Anda bisa menambahkan penanganan error lain di sini jika perlu,
+      // misalnya menampilkan pesan kepada pengguna.
+    }
   }
 }
