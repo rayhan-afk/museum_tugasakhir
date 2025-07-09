@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:museum_tugasakhir/providers/theme_providers.dart';
 import 'package:museum_tugasakhir/screens/comments_screen.dart';
 import 'package:museum_tugasakhir/screens/favorite_screen.dart';
+import 'package:museum_tugasakhir/screens/quiz/quiz_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -26,8 +27,7 @@ class MainDrawer extends StatelessWidget {
     final bool isDarkMode = themeProvider.themeMode == ThemeMode.dark;
 
     return Drawer(
-      backgroundColor:
-          Theme.of(context).scaffoldBackgroundColor, // Menggunakan warna tema
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -61,18 +61,14 @@ class MainDrawer extends StatelessWidget {
                               color: Colors.black87)),
                     ],
                   ),
-                  // # PERUBAHAN: Tombol diubah dan dibungkus CircleAvatar
                   CircleAvatar(
-                    backgroundColor: Colors.black
-                        .withOpacity(0.1), // Latar belakang lingkaran
+                    backgroundColor: Colors.black.withOpacity(0.1),
                     child: IconButton(
                       icon: Icon(
                         isDarkMode ? Icons.wb_sunny : Icons.nightlight_round,
-                        // Matahari warna putih, bulan warna hitam
                         color: isDarkMode ? Colors.white : Colors.black87,
                       ),
                       onPressed: () {
-                        // Memanggil fungsi toggleTheme dengan nilai kebalikannya
                         themeProvider.toggleTheme(!isDarkMode);
                       },
                     ),
@@ -158,21 +154,52 @@ class MainDrawer extends StatelessWidget {
             ),
           ],
 
-          // Tombol Setting yang selalu ada di grup atas
+          // Tombol Quiz
           IconWidget(
-            icon: Icons.settings,
-            title: 'Setting',
-            onTap: () {
-              // TODO: Navigasi ke halaman setting
+            icon: Icons.quiz_sharp,
+            title: 'Quiz',
+            onTap: () async {
+              // <-- Dibuat async
+              final user = Provider.of<User?>(context, listen: false);
+
+              // # PERBAIKAN: Simpan referensi ke ScaffoldMessenger SEBELUM pop
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+              // Tutup drawer
+              Navigator.pop(context);
+
+              if (user != null) {
+                // Jika sudah login, langsung navigasi
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const QuizScreen()),
+                );
+              } else {
+                // Jika belum login, tunggu sebentar lalu tampilkan SnackBar
+                await Future.delayed(const Duration(milliseconds: 300));
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Anda harus login terlebih dahulu untuk memulai quiz.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
           ),
 
-          // Spacer untuk mendorong sisa item ke bawah
+          // Tombol Setting
+          // IconWidget(
+          //   icon: Icons.settings,
+          //   title: 'Setting',
+          //   onTap: () {
+          //     // TODO: Navigasi ke halaman setting
+          //   },
+          // ),
+
           const Spacer(),
 
-          // --- BAGIAN BAWAH YANG SELALU MENEMPEL ---
-
-          // Tombol Logout hanya muncul jika sudah login
+          // Tombol Logout
           if (isLoggedIn) ...[
             const Divider(height: 1, thickness: 1),
             IconWidget(
@@ -193,7 +220,7 @@ class MainDrawer extends StatelessWidget {
             ),
           ],
 
-          // --- Ikon Sosial Media ---
+          // Ikon Sosial Media
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10.0),
             child: Row(

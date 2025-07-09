@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 // Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/data/data.dart';
-import 'package:museum_tugasakhir/screens/details/detailscreen.dart';
+import 'package:museum_tugasakhir/screens/details/detail_screen.dart';
 
 // --- Wrapper untuk Artefak ---
 class ArtefakDetailScreen extends StatelessWidget {
