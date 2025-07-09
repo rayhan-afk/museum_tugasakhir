@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/data/data.dart';
@@ -19,8 +20,7 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
   final MobileScannerController _scannerController = MobileScannerController();
   bool _isProcessing = false;
 
-  // --- Fungsi pembantu untuk membuat model data dan halaman detail ---
-  // (Fungsi ini sama seperti yang kita gunakan di halaman lain)
+  // --- Fungsi pembantu (tidak berubah) ---
   Widget _createDetailScreen(Object data) {
     if (data is ArtefakData) return ArtefakDetailScreen(artefakData: data);
     if (data is BatuanData) return BatuanDetailScreen(batuanData: data);
@@ -46,97 +46,141 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
     }
   }
 
-  // --- Fungsi utama untuk memproses hasil scan ---
-  void _processBarcode(BarcodeCapture capture) async {
-    // Jika sedang memproses, jangan lakukan apa-apa untuk mencegah scan ganda
-    if (_isProcessing) return;
+  // --- # PERUBAHAN: Fungsi untuk menampilkan dialog sukses ---
+  Future<void> _showSuccessDialog(
+      Map<String, dynamic> itemDataMap, Object itemDataObject) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // Pengguna harus menekan tombol
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.green),
+              const SizedBox(width: 10),
+              Text('Berhasil Dipindai',
+                  style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Koleksi berikut telah ditemukan:'),
+                const SizedBox(height: 15),
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Image.network(
+                      itemDataMap['imageUrl'] ?? '',
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  itemDataMap['title'] ?? 'Tanpa Judul',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Scan Lagi'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Tutup dialog
+              },
+            ),
+            ElevatedButton(
+              child: const Text('Lihat Detail'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Tutup dialog
+                // Navigasi ke halaman detail
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            _createDetailScreen(itemDataObject)));
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-    // Tandai bahwa kita sedang memproses agar tidak ada scan ganda
+  // --- Fungsi utama untuk memproses hasil scan (DIPERBARUI) ---
+  void _processBarcode(BarcodeCapture capture) async {
+    if (_isProcessing) return;
     setState(() {
       _isProcessing = true;
     });
 
-    // Ambil kode mentah dari hasil scan (ini adalah ID dokumen)
     final String? scannedId = capture.barcodes.first.rawValue;
 
-    // Cek jika ID valid
     if (scannedId == null || scannedId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kode QR tidak valid.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('QR Code tidak valid.')));
       if (mounted)
         setState(() {
           _isProcessing = false;
-        }); // Buka kembali pemrosesan
+        });
       return;
     }
 
     try {
-      // Cari dokumen di Firestore berdasarkan ID yang di-scan
       final docSnapshot = await FirebaseFirestore.instance
           .collection('koleksi')
           .doc(scannedId)
           .get();
-
       if (docSnapshot.exists && context.mounted) {
-        // --- JIKA DOKUMEN DITEMUKAN ---
         final data = docSnapshot.data()!;
         final itemData = _createDataModel(data, docSnapshot.id);
 
         if (itemData != null) {
-          // Jeda kamera agar tidak terus memindai saat berpindah halaman
-          await _scannerController.stop();
-          // Navigasi ke halaman detail
-          await Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => _createDetailScreen(itemData)));
-          // Setelah kembali dari halaman detail, nyalakan lagi kamera (jika diperlukan)
-          // Jika tidak ingin kamera otomatis nyala, hapus baris di bawah ini
-          if (mounted) await _scannerController.start();
+          await _scannerController.stop(); // Hentikan kamera
+          await _showSuccessDialog(data, itemData); // Tampilkan dialog sukses
+          if (mounted)
+            await _scannerController
+                .start(); // Nyalakan lagi kamera setelah dialog ditutup
         }
       } else {
-        // --- JIKA DOKUMEN TIDAK DITEMUKAN ---
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Koleksi tidak ditemukan.')),
-        );
+            const SnackBar(content: Text('Koleksi tidak ditemukan.')));
       }
     } catch (e) {
-      // Jika terjadi error lain (misal, masalah jaringan)
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Terjadi kesalahan saat mencari koleksi.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Terjadi kesalahan saat mencari koleksi.')));
     }
 
-    // Setelah semua proses selesai, buka kembali pemrosesan agar bisa scan lagi
-    if (mounted) {
+    if (mounted)
       setState(() {
         _isProcessing = false;
       });
-    }
   }
 
   @override
   void dispose() {
-    // Selalu dispose controller saat widget tidak lagi digunakan
     _scannerController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // ... (Kode UI di dalam build method tidak berubah)
     return Scaffold(
       body: Stack(
         children: [
-          // Widget utama untuk menampilkan kamera scanner
           MobileScanner(
             controller: _scannerController,
-            onDetect:
-                _processBarcode, // Fungsi yang akan dipanggil saat QR code terdeteksi
+            onDetect: _processBarcode,
           ),
-
-          // Lapisan UI tambahan di atas kamera (overlay)
           Positioned.fill(
             child: Container(
               decoration: ShapeDecoration(
@@ -148,8 +192,6 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
               ),
             ),
           ),
-
-          // Teks instruksi
           Positioned(
             top: 60,
             left: 0,
@@ -167,7 +209,6 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
               ),
             ),
           ),
-          // Tombol kembali
           Positioned(
             top: 50,
             left: 12,

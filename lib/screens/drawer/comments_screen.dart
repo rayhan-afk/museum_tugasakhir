@@ -71,8 +71,8 @@ class MyCommentsScreen extends StatelessWidget {
       builder: (BuildContext ctx) {
         return AlertDialog(
           title: const Text('Hapus Komentar?'),
-          content: const Text(
-              'Apakah Anda yakin ingin menghapus komentar ini? Tindakan ini tidak dapat dibatalkan.'),
+          content:
+              const Text('Apakah Anda yakin ingin menghapus komentar ini?'),
           actions: <Widget>[
             TextButton(
               child: const Text('Batal'),
