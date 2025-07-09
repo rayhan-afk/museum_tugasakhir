@@ -159,4 +159,15 @@ class FirestoreService {
       return 0; // Anggap 0 jika terjadi error
     }
   }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getLeaderboardStream() {
+    // Parameter limit dihapus
+    return _leaderboardCollection
+        .orderBy('score',
+            descending: true) // Urutkan berdasarkan skor tertinggi
+        .orderBy('lastPlayed',
+            descending: true) // Jika skor sama, yang terbaru di atas
+        // .limit(limit) // Baris ini dihapus agar mengambil semua data
+        .snapshots();
+  }
 }

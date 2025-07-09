@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:museum_tugasakhir/screens/quiz/leaderboard_screen.dart';
 import 'package:museum_tugasakhir/screens/quiz/quiz_session_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -96,7 +97,11 @@ class _QuizScreenState extends State<QuizScreen> {
             icon: const Icon(Icons.leaderboard_outlined),
             tooltip: 'Papan Peringkat',
             onPressed: () {
-              // TODO: Navigasi ke halaman leaderboard
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const LeaderboardScreen()),
+              );
             },
           ),
         ],
