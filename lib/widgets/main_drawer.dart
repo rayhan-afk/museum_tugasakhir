@@ -221,17 +221,17 @@ class MainDrawer extends StatelessWidget {
           ],
 
           // Ikon Sosial Media
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                SocialIcon(icon: Icons.facebook, onTap: () {}),
-                SocialIcon(icon: FontAwesomeIcons.instagram, onTap: () {}),
-                SocialIcon(icon: FontAwesomeIcons.twitter, onTap: () {}),
-              ],
-            ),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(vertical: 10.0),
+          //   child: Row(
+          //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          //     children: [
+          //       SocialIcon(icon: Icons.facebook, onTap: () {}),
+          //       SocialIcon(icon: FontAwesomeIcons.instagram, onTap: () {}),
+          //       SocialIcon(icon: FontAwesomeIcons.twitter, onTap: () {}),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );

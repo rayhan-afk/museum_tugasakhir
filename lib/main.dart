@@ -6,56 +6,47 @@ import 'package:provider/provider.dart';
 
 // Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/services/auth_service.dart';
-import 'package:museum_tugasakhir/screens/tabs.dart'; // Import halaman Tabs
+import 'package:museum_tugasakhir/screens/splash_screen.dart'; // <-- IMPORT HALAMAN BARU
 import 'services/firebase_options.dart';
 
 void main() async {
-  // Memastikan semua binding Flutter sudah siap sebelum menjalankan kode
   WidgetsFlutterBinding.ensureInitialized();
-  // Menginisialisasi Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
   runApp(
-    // Membungkus seluruh aplikasi dengan MultiProvider.
     MultiProvider(
       providers: [
-        // 1. Provider untuk status otentikasi (tetap ada)
         StreamProvider<User?>.value(
           value: AuthService().authStateChanges,
           initialData: null,
         ),
-        // 2. Provider untuk tema (BARU)
         ChangeNotifierProvider(
           create: (context) => ThemeProvider(),
         ),
       ],
-      child: const MyApp(), // Aplikasi utama Anda
+      child: const MyApp(),
     ),
   );
 }
 
-//--- Widget Aplikasi Utama (MyApp) digabungkan di sini ---
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // "Mendengarkan" perubahan dari ThemeProvider
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
       title: 'Museum Geologi App',
       debugShowCheckedModeBanner: false,
+      theme: MyThemes.lightTheme,
+      darkTheme: MyThemes.darkTheme,
+      themeMode: themeProvider.themeMode,
 
-      // # PERUBAHAN UTAMA: Mengatur tema aplikasi
-      theme: MyThemes.lightTheme, // Tema saat mode terang
-      darkTheme: MyThemes.darkTheme, // Tema saat mode gelap
-      themeMode: themeProvider.themeMode, // Menggunakan mode yang sedang aktif
-
-      // Mengarahkan home ke widget Tabs()
-      home: const Tabs(), // Halaman utama aplikasi Anda
+      // # PERUBAHAN UTAMA: Halaman pertama sekarang adalah SplashScreen
+      home: const SplashScreen(),
     );
   }
 }

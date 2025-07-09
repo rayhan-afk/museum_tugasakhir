@@ -70,19 +70,6 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     });
   }
 
-  // Fungsi untuk pindah ke soal berikutnya atau sebelumnya
-  void _navigateQuestion(int newIndex) {
-    // Simpan jawaban pengguna untuk pertanyaan saat ini
-    if (_selectedAnswer != null) {
-      _userAnswers[_currentQuestionIndex] = _selectedAnswer!;
-    }
-
-    setState(() {
-      _currentQuestionIndex = newIndex;
-    });
-    _setupCurrentQuestion();
-  }
-
   // # FUNGSI BARU (YANG SEBELUMNYA HILANG)
   // Fungsi yang dipanggil saat tombol Lanjut atau Selesai ditekan
   void _nextQuestion() {
@@ -111,8 +98,9 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
   }
 
   // Fungsi untuk menghitung skor dan menampilkan dialog hasil
+  // # PERUBAHAN UTAMA: Logika perhitungan skor diubah
   void _calculateAndShowResults() async {
-    int score = 0;
+    int correctCount = 0;
     for (int i = 0; i < _quizDocuments.length; i++) {
       final quizData = _quizDocuments[i].data() as Map<String, dynamic>;
       final correctAnswerIndex = quizData['correctAnswerIndex'] as int;
@@ -120,27 +108,46 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
           quizData['options'][correctAnswerIndex] as String;
 
       if (_userAnswers[i] == correctAnswerText) {
-        score++;
+        correctCount++;
       }
     }
 
-    // Simpan skor ke Firestore
+    // Hitung skor akhir dengan skala 100
+    // Rumus: (Jumlah Benar / Total Soal) * 100
+    int finalScore = ((correctCount / _quizDocuments.length) * 100).round();
+
+    // Simpan skor akhir (yang sudah berskala 100) ke Firestore
     final user = Provider.of<User?>(context, listen: false);
     if (user != null) {
-      await _firestoreService.updateUserScore(user, score);
+      await _firestoreService.updateUserScore(user, finalScore);
     }
 
-    // Tampilkan dialog hasil
+    // Tampilkan dialog hasil dengan format skor baru
     if (mounted) {
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
           title: const Text('Kuis Selesai!'),
-          content: Text(
-            'Skor Anda:\n\n$score dari ${_quizDocuments.length} soal benar.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 20),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Skor Akhir Anda:',
+                style: GoogleFonts.montserrat(fontSize: 18),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '$finalScore',
+                style: GoogleFonts.montserrat(
+                    fontSize: 48, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '($correctCount dari ${_quizDocuments.length} soal benar)',
+                style: GoogleFonts.montserrat(fontSize: 16),
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -200,30 +207,22 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
                   }).toList(),
                   const Spacer(),
                   // Navigasi Bawah
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Tombol Kembali
-                      if (_currentQuestionIndex > 0)
-                        TextButton(
-                          onPressed: () =>
-                              _navigateQuestion(_currentQuestionIndex - 1),
-                          child: const Text('<< Kembali'),
-                        ),
-                      const Spacer(),
-                      // Tombol Lanjut / Selesai
-                      ElevatedButton(
-                        onPressed: _nextQuestion,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isLastQuestion
-                              ? Colors.green
-                              : Theme.of(context).primaryColor,
-                        ),
-                        child: Text(isLastQuestion
-                            ? 'Selesai & Lihat Hasil'
-                            : 'Lanjut >>'),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      onPressed: _nextQuestion,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        backgroundColor: isLastQuestion
+                            ? Colors.green
+                            : Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
                       ),
-                    ],
+                      icon: Text(isLastQuestion ? 'Selesai' : 'Next'),
+                      label:
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                    ),
                   )
                 ],
               ),
