@@ -1,5 +1,3 @@
-// File: lib/widgets/main_drawer.dart
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:museum_tugasakhir/widgets/icon_widget.dart';
-import 'package:museum_tugasakhir/widgets/social_icon.dart';
 import 'package:museum_tugasakhir/services/auth_service.dart';
 
 class MainDrawer extends StatelessWidget {
