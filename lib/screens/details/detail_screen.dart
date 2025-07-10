@@ -142,6 +142,8 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
       'text': commentText,
       'authorName': user.displayName ?? 'Pengguna Anonim',
       'authorId': user.uid,
+      // # PERUBAHAN: Menambahkan email pengguna
+      'authorEmail': user.email ?? 'Tidak ada email',
       'timestamp': FieldValue.serverTimestamp(),
       'itemTitle': widget.getTitle(currentItem),
       'itemImageUrl': widget.getImageUrl(currentItem),

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:museum_tugasakhir/providers/theme_providers.dart';
-import 'package:museum_tugasakhir/screens/comments_screen.dart';
-import 'package:museum_tugasakhir/screens/favorite_screen.dart';
+import 'package:museum_tugasakhir/screens/drawer/comments_screen.dart';
+import 'package:museum_tugasakhir/screens/drawer/favorite_screen.dart';
 import 'package:museum_tugasakhir/screens/quiz/quiz_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -157,7 +157,7 @@ class MainDrawer extends StatelessWidget {
           // Tombol Quiz
           IconWidget(
             icon: Icons.quiz_sharp,
-            title: 'Quiz',
+            title: 'Kuis',
             onTap: () async {
               // <-- Dibuat async
               final user = Provider.of<User?>(context, listen: false);

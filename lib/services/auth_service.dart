@@ -1,13 +1,17 @@
+// File: lib/services/auth_service.dart
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:museum_tugasakhir/services/firestore_service.dart'; // <-- IMPORT BARU
 
 class AuthService {
-  // Membuat instance dari Firebase Auth dan Google Sign-In
+  // Membuat instance dari Firebase Auth, Google Sign-In, dan Firestore Service
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirestoreService _firestoreService =
+      FirestoreService(); // <-- TAMBAHKAN INI
 
-  // Stream untuk mendengarkan perubahan status login (login, logout, dll.)
-  // Ini akan kita gunakan nanti dengan Provider untuk memberitahu seluruh aplikasi.
+  // Stream untuk mendengarkan perubahan status login
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
   // Getter untuk mendapatkan pengguna yang sedang login saat ini
@@ -21,9 +25,8 @@ class AuthService {
       // Memunculkan dialog pop-up untuk memilih akun Google
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      // Jika pengguna membatalkan atau menutup dialog
       if (googleUser == null) {
-        return null;
+        return null; // Pengguna membatalkan login
       }
 
       // Mendapatkan detail otentikasi dari akun Google yang dipilih
@@ -39,9 +42,15 @@ class AuthService {
       // Menggunakan kredensial untuk login ke Firebase
       final UserCredential userCredential =
           await _firebaseAuth.signInWithCredential(credential);
+      final User? user = userCredential.user;
+
+      // # PERUBAHAN UTAMA: Setelah login berhasil, simpan/update data pengguna
+      if (user != null) {
+        await _firestoreService.updateUserData(user);
+      }
 
       // Mengembalikan data pengguna dari Firebase
-      return userCredential.user;
+      return user;
     } catch (e) {
       // Menangani jika terjadi error
       print('Error saat login dengan Google: $e');
@@ -52,7 +61,6 @@ class AuthService {
   // 2. Fungsi untuk Logout
   Future<void> signOut() async {
     try {
-      // Logout dari Google dan Firebase
       await _googleSignIn.signOut();
       await _firebaseAuth.signOut();
     } catch (e) {

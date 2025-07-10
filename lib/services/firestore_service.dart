@@ -1,3 +1,5 @@
+// File: lib/services/firestore_service.dart
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -11,7 +13,6 @@ class FirestoreService {
       _db.collection('koleksi');
   CollectionReference<Map<String, dynamic>> get _commentsCollection =>
       _db.collection('comments');
-  // Menggunakan nama collection 'quizzes' sesuai kesepakatan
   CollectionReference<Map<String, dynamic>> get _quizzesCollection =>
       _db.collection('quiz');
   CollectionReference<Map<String, dynamic>> get _leaderboardCollection =>
@@ -41,6 +42,21 @@ class FirestoreService {
             .update(mainItemRef, {'favoriteCount': FieldValue.increment(1)});
       }
     });
+  }
+
+  Future<void> updateUserData(User user) async {
+    final docRef = _usersCollection.doc(user.uid);
+
+    return docRef.set(
+        {
+          'userId': user.uid,
+          'userName': user.displayName,
+          'email': user.email,
+        },
+        SetOptions(
+            merge:
+                true)); // SetOptions(merge: true) akan membuat dokumen baru jika belum ada,
+    // atau memperbarui yang sudah ada tanpa menghapus data lama (seperti sub-collection 'favorites').
   }
 
   /// Stream untuk mendengarkan status favorit sebuah item secara real-time.
@@ -97,7 +113,6 @@ class FirestoreService {
       final doc = await docRef.get();
 
       if (!doc.exists) {
-        // Jika pengguna belum pernah bermain, tentu saja mereka bisa bermain.
         return true;
       }
 
@@ -107,7 +122,7 @@ class FirestoreService {
       return attempts < 3;
     } catch (e) {
       print('Error memeriksa kesempatan kuis: $e');
-      return false; // Anggap tidak bisa bermain jika terjadi error
+      return false;
     }
   }
 
@@ -121,7 +136,12 @@ class FirestoreService {
       if (!snapshot.exists) {
         // Jika pengguna belum ada di leaderboard, buat data baru.
         transaction.set(docRef, {
+          // # PERUBAHAN: Menambahkan userId, userName, dan email
+          'userId': user.uid,
           'userName': user.displayName ?? 'Pengguna Anonim',
+          'email': user.email ?? 'Tidak ada email',
+          // 'userPhotoUrl':
+          //     user.photoURL ?? '', // Kita simpan juga URL foto untuk efisiensi
           'score': newScore,
           'quizAttempts': 1,
           'lastPlayed': FieldValue.serverTimestamp(),
@@ -130,12 +150,19 @@ class FirestoreService {
         // Jika pengguna sudah ada, perbarui datanya.
         final currentData = snapshot.data() as Map<String, dynamic>;
         final currentScore = currentData['score'] as int? ?? 0;
-        final currentAttempts = currentData['quizAttempts'] as int? ?? 0;
 
+        // Hanya update skor jika skor baru lebih tinggi
+        if (newScore > currentScore) {
+          transaction.update(docRef, {'score': newScore});
+        }
+
+        // Selalu update jumlah percobaan dan data pengguna lainnya
         transaction.update(docRef, {
-          'score': currentScore + newScore,
-          'quizAttempts': currentAttempts + 1,
+          'quizAttempts': FieldValue.increment(1),
           'lastPlayed': FieldValue.serverTimestamp(),
+          'userName': user.displayName ?? 'Pengguna Anonim',
+          'email': user.email ?? 'Tidak ada email',
+          'userPhotoUrl': user.photoURL ?? '',
         });
       }
     });
@@ -147,27 +174,21 @@ class FirestoreService {
       final doc = await docRef.get();
 
       if (!doc.exists) {
-        // Jika pengguna belum pernah bermain, percobaannya adalah 0.
         return 0;
       }
 
       final data = doc.data() as Map<String, dynamic>;
-      // Kembalikan nilai quizAttempts, atau 0 jika tidak ada.
       return data['quizAttempts'] as int? ?? 0;
     } catch (e) {
       print('Error mendapatkan percobaan kuis: $e');
-      return 0; // Anggap 0 jika terjadi error
+      return 0;
     }
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getLeaderboardStream() {
-    // Parameter limit dihapus
     return _leaderboardCollection
-        .orderBy('score',
-            descending: true) // Urutkan berdasarkan skor tertinggi
-        .orderBy('lastPlayed',
-            descending: true) // Jika skor sama, yang terbaru di atas
-        // .limit(limit) // Baris ini dihapus agar mengambil semua data
+        .orderBy('score', descending: true)
+        .orderBy('lastPlayed', descending: true)
         .snapshots();
   }
 }

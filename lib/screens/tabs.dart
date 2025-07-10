@@ -3,9 +3,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:museum_tugasakhir/screens/collections_screen.dart';
-import 'package:museum_tugasakhir/screens/museum_screen.dart';
-import 'package:museum_tugasakhir/screens/scanner_screen.dart';
-import 'package:museum_tugasakhir/widgets/main_drawer.dart';
+import 'package:museum_tugasakhir/screens/home_screen.dart';
+import 'package:museum_tugasakhir/screens/scanner/scanner_screen.dart';
+import 'package:museum_tugasakhir/screens/drawer/main_drawer.dart';
 
 class Tabs extends StatefulWidget {
   const Tabs({Key? key}) : super(key: key);
@@ -22,7 +22,7 @@ class _TabsState extends State<Tabs> {
   ];
 
   final List<String> pageTitles = const [
-    'Museum',
+    'Home',
     'Scanner',
     'Collections',
   ];
