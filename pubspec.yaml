@@ -46,6 +46,8 @@ dependencies:
   shared_preferences: ^2.2.3
   url_launcher: ^6.2.6
   package_info_plus: ^8.0.0
+  intl: ^0.18.1
+ 
 
 dev_dependencies:
   flutter_test:
@@ -57,6 +59,12 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/image/icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -71,17 +79,12 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-  - assets/image/artifact.png
-  - assets/image/coral.png
   - assets/image/mineral.png
-  - assets/image/vertebrata.png
-  - assets/image/dinosaur.png
   - assets/image/batuan.png
   - assets/image/fosil.png
   - assets/image/artefak.png
-  - assets/image/trex.jpg
-  - assets/image/batuan.jpg
   - assets/image/museumgambar.jpg
+  - assets/image/icon.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

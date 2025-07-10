@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/services/firestore_service.dart';
 
 class QuizSessionScreen extends StatefulWidget {
@@ -70,7 +69,6 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     });
   }
 
-  // # FUNGSI BARU (YANG SEBELUMNYA HILANG)
   // Fungsi yang dipanggil saat tombol Lanjut atau Selesai ditekan
   void _nextQuestion() {
     // Simpan jawaban pengguna untuk pertanyaan saat ini
@@ -98,7 +96,6 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
   }
 
   // Fungsi untuk menghitung skor dan menampilkan dialog hasil
-  // # PERUBAHAN UTAMA: Logika perhitungan skor diubah
   void _calculateAndShowResults() async {
     int correctCount = 0;
     for (int i = 0; i < _quizDocuments.length; i++) {

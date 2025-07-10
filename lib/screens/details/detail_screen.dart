@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:museum_tugasakhir/screens/details/appbar.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/services/firestore_service.dart';
-import 'package:museum_tugasakhir/data/data.dart';
 
 class DetailScreen<T> extends StatefulWidget {
   final T data;
   final String Function(T) getTitle;
   final String Function(T) getYear;
   final String Function(T) getDescription;
-  final String Function(T) getImageUrl; // <-- Untuk gambar utama di AppBar
-  final List<String> Function(T) getImageUrls; // <-- Untuk galeri
+  final String Function(T) getImageUrl;
+  final List<String> Function(T) getImageUrls;
   final String Function(T) getCategoryIconPath;
   final String Function(T) getItemId;
   final Map<String, dynamic> Function(T) toMap;
@@ -64,6 +62,12 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     super.dispose();
   }
 
+//Fungsi untuk memformat timestamp menjadi tanggal
+  String _formatTimestamp(Timestamp? timestamp) {
+    if (timestamp == null) return '';
+    return DateFormat('d MMMM yyyy', 'id_ID').format(timestamp.toDate());
+  }
+
   void _handleFavoriteTap(User? user, bool isFavorited) {
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,7 +88,7 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     }
   }
 
-  // --- FUNGSI BARU UNTUK MENAMPILKAN GAMBAR ZOOMABLE ---
+  //Fungsi untuk menampilkan gambar zoomable
   void _showZoomableImage(BuildContext context, String imageUrl) {
     showDialog(
       context: context,
@@ -142,7 +146,6 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
       'text': commentText,
       'authorName': user.displayName ?? 'Pengguna Anonim',
       'authorId': user.uid,
-      // # PERUBAHAN: Menambahkan email pengguna
       'authorEmail': user.email ?? 'Tidak ada email',
       'timestamp': FieldValue.serverTimestamp(),
       'itemTitle': widget.getTitle(currentItem),
@@ -157,12 +160,13 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
   Widget _buildPageIndicator(bool isActive) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
       margin: const EdgeInsets.symmetric(horizontal: 4.0),
       height: 8.0,
       width: isActive ? 24.0 : 8.0,
       decoration: BoxDecoration(
         color: isActive
-            ? Theme.of(context).primaryColor
+            ? Theme.of(context).colorScheme.primary
             : Colors.grey.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -178,7 +182,6 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     return Scaffold(
       body: CustomScrollView(
         slivers: <Widget>[
-          // --- BAGIAN APPBAR (KEMBALI KE VERSI SEDERHANA) ---
           StreamBuilder<bool>(
             stream: user != null
                 ? _firestoreService.isFavoritedStream(user.uid, itemId)
@@ -206,7 +209,7 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
             },
           ),
 
-          // --- BAGIAN DESKRIPSI & KONTEN LAINNYA ---
+          //BAGIAN DESKRIPSI & KONTEN LAINNYA
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -240,7 +243,7 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                     style: GoogleFonts.montserrat(fontSize: 14, height: 1.5),
                   ),
 
-                  // # PERUBAHAN: GALERI GAMBAR DITAMBAHKAN DI SINI
+                  //GALERI GAMBAR
                   if (imageUrls.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     Text('Galeri Gambar',
@@ -257,7 +260,6 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 4.0),
                             child: GestureDetector(
-                              // <-- DITAMBAHKAN: Agar bisa di-klik
                               onTap: () {
                                 _showZoomableImage(context, imageUrls[index]);
                               },
@@ -283,8 +285,7 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                         }),
                       )
                   ],
-
-                  // Bagian Komentar
+                  //BAGIAN KOMENTAR
                   const Divider(height: 40),
                   Text('Komentar',
                       style: GoogleFonts.montserrat(
@@ -333,6 +334,10 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                         itemBuilder: (context, index) {
                           final commentData = snapshot.data!.docs[index].data()
                               as Map<String, dynamic>;
+                          // Ambil data timestamp
+                          final timestamp =
+                              commentData['timestamp'] as Timestamp?;
+
                           return Card(
                             margin: const EdgeInsets.only(bottom: 10),
                             child: ListTile(
@@ -342,6 +347,12 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold)),
                               subtitle: Text(commentData['text'] ?? ''),
+                              //Menampilkan tanggal di sini
+                              trailing: Text(
+                                _formatTimestamp(timestamp),
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 12),
+                              ),
                             ),
                           );
                         },

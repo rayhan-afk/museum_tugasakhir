@@ -1,5 +1,3 @@
-// File: lib/services/auth_service.dart
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:museum_tugasakhir/services/firestore_service.dart'; // <-- IMPORT BARU
@@ -44,7 +42,7 @@ class AuthService {
           await _firebaseAuth.signInWithCredential(credential);
       final User? user = userCredential.user;
 
-      // # PERUBAHAN UTAMA: Setelah login berhasil, simpan/update data pengguna
+      // Setelah login berhasil, simpan/update data pengguna
       if (user != null) {
         await _firestoreService.updateUserData(user);
       }

@@ -1,20 +1,14 @@
-// File: lib/screens/collections_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/screens/categories/category_items_screen.dart';
 import 'package:museum_tugasakhir/screens/search.dart';
 import 'package:museum_tugasakhir/widgets/categories_tile.dart';
 import 'package:museum_tugasakhir/data/data.dart';
 import 'package:museum_tugasakhir/screens/details/details.dart';
 
-// --- FUNGSI PEMBANTU (HELPER FUNCTIONS) DITARUH DI LUAR KELAS ---
-// Ini membuat fungsi bisa diakses dengan lebih mudah dan konsisten.
-
-// Tugas: Memilih halaman detail yang benar untuk dibuka.
+// Fungsi Helper Memilih halaman detail yang benar untuk dibuka.
 Widget createDetailScreen(Object data) {
   if (data is ArtefakData) return ArtefakDetailScreen(artefakData: data);
   if (data is BatuanData) return BatuanDetailScreen(batuanData: data);
@@ -23,7 +17,7 @@ Widget createDetailScreen(Object data) {
   return const Scaffold(body: Center(child: Text('Tipe data tidak valid')));
 }
 
-// Tugas: Mengubah data mentah (Map) dari Firestore menjadi objek data.
+// Mengubah data mentah (Map) dari Firestore menjadi objek data.
 Object? createDataModel(Map<String, dynamic> firestoreData, String docId) {
   final category = firestoreData['category'] as String?;
   if (category == null) return null;
@@ -41,7 +35,6 @@ Object? createDataModel(Map<String, dynamic> firestoreData, String docId) {
       return null;
   }
 }
-// --- AKHIR DARI FUNGSI PEMBANTU ---
 
 class CollectionsScreen extends StatelessWidget {
   const CollectionsScreen({Key? key}) : super(key: key);
@@ -165,13 +158,13 @@ class CollectionsScreen extends StatelessWidget {
   }
 }
 
-// WIDGET BARU UNTUK MENAMPILKAN ITEM PALING POPULER
+// WIDGET UNTUK MENAMPILKAN ITEM PALING POPULER
 class MostPopularWidget extends StatelessWidget {
   const MostPopularWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // # PERUBAHAN UTAMA: Query sekarang mengurutkan berdasarkan favoriteCount
+    // Query mengurutkan berdasarkan favoriteCount
     final Query query = FirebaseFirestore.instance
         .collection('koleksi')
         .orderBy('favoriteCount',

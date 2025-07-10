@@ -42,6 +42,3 @@ class CategoriesTile extends StatelessWidget {
     );
   }
 }
-
-//193040044
-//rayhan abduhuda

@@ -1,11 +1,8 @@
-// File: lib/screens/camera_scanner_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/data/data.dart';
 import 'package:museum_tugasakhir/screens/details/details.dart';
 
@@ -20,7 +17,7 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
   final MobileScannerController _scannerController = MobileScannerController();
   bool _isProcessing = false;
 
-  // --- Fungsi pembantu (tidak berubah) ---
+  // Fungsi helper
   Widget _createDetailScreen(Object data) {
     if (data is ArtefakData) return ArtefakDetailScreen(artefakData: data);
     if (data is BatuanData) return BatuanDetailScreen(batuanData: data);
@@ -46,7 +43,7 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
     }
   }
 
-  // --- # PERUBAHAN: Fungsi untuk menampilkan dialog sukses ---
+  //Fungsi untuk menampilkan dialog sukses ---
   Future<void> _showSuccessDialog(
       Map<String, dynamic> itemDataMap, Object itemDataObject) async {
     return showDialog<void>(
@@ -115,7 +112,7 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
     );
   }
 
-  // --- Fungsi utama untuk memproses hasil scan (DIPERBARUI) ---
+  // Fungsi utama untuk memproses hasil scan
   void _processBarcode(BarcodeCapture capture) async {
     if (_isProcessing) return;
     setState(() {
@@ -173,7 +170,6 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
 
   @override
   Widget build(BuildContext context) {
-    // ... (Kode UI di dalam build method tidak berubah)
     return Scaffold(
       body: Stack(
         children: [

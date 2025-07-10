@@ -41,24 +41,6 @@ class FavoritesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Mendapatkan pengguna yang sedang login dari Provider
     final user = Provider.of<User?>(context);
-
-    // Jika pengguna belum login, tampilkan pesan
-    // if (user == null) {
-    //   return Scaffold(
-    //     appBar: AppBar(title: const Text('Favorit Saya')),
-    //     body: Center(
-    //       child: Padding(
-    //         padding: const EdgeInsets.all(20.0),
-    //         child: Text(
-    //           'Silakan login terlebih dahulu untuk melihat koleksi favorit Anda.',
-    //           textAlign: TextAlign.center,
-    //           style: GoogleFonts.montserrat(fontSize: 18),
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    // }
-
     // Jika sudah login, tampilkan daftar favorit dari Firestore
     return Scaffold(
       appBar: AppBar(
@@ -129,7 +111,7 @@ class FavoritesScreen extends StatelessWidget {
                         style: GoogleFonts.montserrat(
                             fontWeight: FontWeight.bold)),
 
-                    // # PERUBAHAN: Menampilkan deskripsi di subtitle
+                    //Menampilkan deskripsi di subtitle
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 5.0),
                       child: Text(

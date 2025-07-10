@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/data/data.dart';
 import 'package:museum_tugasakhir/screens/details/details.dart';
 
-// Ganti nama kelas di file ini menjadi CategoryItemsScreen untuk konsistensi
 class CategoryItemsScreen extends StatelessWidget {
   final String categoryName;
 
@@ -22,11 +20,11 @@ class CategoryItemsScreen extends StatelessWidget {
     return const Scaffold(body: Center(child: Text('Tipe data tidak valid')));
   }
 
-  // # PERUBAHAN 1: Fungsi ini sekarang menerima ID Dokumen
+  //Fungsi untuk menerima ID Dokumen
   Object? _createDataModel(
       String category, Map<String, dynamic> firestoreData, String docId) {
     switch (category) {
-      // # PERUBAHAN 2: ID Dokumen dikirim saat membuat objek data
+      //ID Dokumen dikirim saat membuat objek data
       case 'Artefak':
         return ArtefakData.fromFirestore(firestoreData, docId);
       case 'Batuan':
@@ -86,7 +84,7 @@ class CategoryItemsScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final doc = snapshot.data!.docs[index];
               final data = doc.data()! as Map<String, dynamic>;
-              // # PERUBAHAN 3: Mengirim ID dokumen (doc.id) ke fungsi helper
+              //Mengirim ID dokumen (doc.id) ke fungsi helper
               final itemData = _createDataModel(categoryName, data, doc.id);
 
               return GestureDetector(

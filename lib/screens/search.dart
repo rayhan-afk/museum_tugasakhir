@@ -1,11 +1,6 @@
-// File: lib/screens/details/search.dart
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// Import helper dan model data yang diperlukan
-// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/data/data.dart';
 import 'package:museum_tugasakhir/screens/details/details.dart';
 
@@ -29,13 +24,12 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   // --- Fungsi pembantu untuk membuat model data ---
-  // # PERUBAHAN 1: Fungsi ini sekarang menerima ID Dokumen
   Object? _createDataModel(Map<String, dynamic> firestoreData, String docId) {
     final category = firestoreData['category'] as String?;
     if (category == null) return null;
 
     switch (category) {
-      // # PERUBAHAN 2: ID Dokumen dikirim saat membuat objek data
+      // ID Dokumen dikirim saat membuat objek data
       case 'Artefak':
         return ArtefakData.fromFirestore(firestoreData, docId);
       case 'Batuan':
@@ -53,7 +47,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Kolom input pencarian (tidak berubah)
+        // Kolom input pencarian
         title: TextField(
           autofocus: true,
           decoration: const InputDecoration(
@@ -82,7 +76,7 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: _searchQuery.isEmpty
           ? Center(
-              // Tampilan awal (tidak berubah)
+              // Tampilan awal
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -98,7 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             )
           : StreamBuilder<QuerySnapshot>(
-              // Query pencarian awalan (tidak berubah)
+              // Query pencarian awalan
               stream: FirebaseFirestore.instance
                   .collection('koleksi')
                   .where('search_keyword', isGreaterThanOrEqualTo: _searchQuery)
@@ -118,7 +112,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   );
                 }
 
-                // # PERUBAHAN 3: Tampilan hasil pencarian sekarang sama dengan halaman kategori
+                // Tampilan hasil pencarian sama dengan halaman kategori
                 return ListView(
                   padding: const EdgeInsets.all(10),
                   children: snapshot.data!.docs.map((doc) {

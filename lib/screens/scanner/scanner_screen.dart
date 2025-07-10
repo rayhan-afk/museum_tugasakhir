@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:museum_tugasakhir/screens/scanner/camera_scanner.dart';
-// Kita akan membuat file ini nanti
 
 class ScannerScreen extends StatelessWidget {
   const ScannerScreen({Key? key}) : super(key: key);

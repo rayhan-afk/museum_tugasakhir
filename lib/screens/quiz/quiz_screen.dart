@@ -1,5 +1,3 @@
-// File: lib/screens/quiz_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:museum_tugasakhir/screens/quiz/leaderboard_screen.dart';
@@ -19,7 +17,7 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _isLoading =
       false; // State untuk menandai proses loading saat tombol ditekan
 
-  // # PERUBAHAN: State untuk menyimpan dan menampilkan jumlah percobaan
+  //State untuk menyimpan dan menampilkan jumlah percobaan
   int? _attempts;
   bool _isFetchingAttempts = true;
 
@@ -60,7 +58,7 @@ class _QuizScreenState extends State<QuizScreen> {
       return;
     }
 
-    // # PERUBAHAN: Pengecekan sekarang menggunakan state _attempts
+    // Pengecekan attempts
     if (_attempts != null && _attempts! < 3) {
       // Jika masih bisa bermain, navigasi ke halaman sesi kuis
       // Kita tunggu hasilnya, lalu refresh data percobaan
@@ -133,7 +131,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                     const SizedBox(height: 30),
 
-                    // # PERUBAHAN: Menampilkan informasi batas kuis
+                    //Menampilkan informasi batas kuis
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 10),

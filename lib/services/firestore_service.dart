@@ -1,5 +1,3 @@
-// File: lib/services/firestore_service.dart
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -136,12 +134,10 @@ class FirestoreService {
       if (!snapshot.exists) {
         // Jika pengguna belum ada di leaderboard, buat data baru.
         transaction.set(docRef, {
-          // # PERUBAHAN: Menambahkan userId, userName, dan email
           'userId': user.uid,
           'userName': user.displayName ?? 'Pengguna Anonim',
           'email': user.email ?? 'Tidak ada email',
-          // 'userPhotoUrl':
-          //     user.photoURL ?? '', // Kita simpan juga URL foto untuk efisiensi
+          'userPhotoUrl': user.photoURL ?? '',
           'score': newScore,
           'quizAttempts': 1,
           'lastPlayed': FieldValue.serverTimestamp(),

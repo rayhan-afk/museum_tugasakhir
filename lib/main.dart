@@ -1,19 +1,18 @@
-// File: lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:museum_tugasakhir/providers/theme_providers.dart';
+import 'package:museum_tugasakhir/screens/splash_screen.dart';
 import 'package:provider/provider.dart';
 
-// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/services/auth_service.dart';
-import 'package:museum_tugasakhir/screens/tabs.dart'; // Import halaman Tabs
 import 'package:museum_tugasakhir/services/firebase_options.dart';
 
 void main() async {
   // Memastikan semua binding Flutter sudah siap sebelum menjalankan kode
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID');
   // Menginisialisasi Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -33,8 +32,8 @@ void main() async {
           create: (context) => ThemeProvider(),
         ),
       ],
-      // # PERUBAHAN UTAMA: Menggunakan Consumer untuk membangun MaterialApp
-      // Ini memastikan kita menggunakan context yang benar.
+      // Menggunakan Consumer untuk membangun MaterialApp
+      // Ini memastikan menggunakan context yang benar.
       child: const MyApp(),
     ),
   );
@@ -60,7 +59,7 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.themeMode,
 
           // Mengarahkan home ke widget Tabs()
-          home: const Tabs(),
+          home: const SplashScreen(),
         );
       },
     );

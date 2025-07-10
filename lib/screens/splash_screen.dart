@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/screens/tabs.dart'; // Import halaman utama Anda
 
 class SplashScreen extends StatefulWidget {
@@ -53,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        // Menggunakan gradient yang sama dengan tema Anda
+        // Menggunakan gradient yang sama dengan tema
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topRight,

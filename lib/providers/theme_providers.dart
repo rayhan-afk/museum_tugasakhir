@@ -48,7 +48,7 @@ class ThemeProvider with ChangeNotifier {
   }
 }
 
-// Kelas ini mendefinisikan seperti apa tampilan tema terang dan gelap kita.
+// Kelas ini mendefinisikan seperti apa tampilan tema terang dan gelap aplikasi.
 class MyThemes {
   // Tema untuk Mode Terang (Light Mode)
   static final ThemeData lightTheme = ThemeData(
@@ -84,6 +84,5 @@ class MyThemes {
         fontSize: 22,
       ),
     ),
-    // Anda bisa menambahkan kustomisasi lain di sini
   );
 }

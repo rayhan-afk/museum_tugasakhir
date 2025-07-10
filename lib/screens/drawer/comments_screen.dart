@@ -4,12 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/data/data.dart';
 import 'package:museum_tugasakhir/screens/details/details.dart';
 import 'package:museum_tugasakhir/services/firestore_service.dart';
 
-// Fungsi helper diletakkan di sini agar bisa dipakai bersama
+//Fungsi helper diletakkan di sini agar bisa dipakai bersama
 Widget _createDetailScreen(Object data) {
   if (data is ArtefakData) return ArtefakDetailScreen(artefakData: data);
   if (data is BatuanData) return BatuanDetailScreen(batuanData: data);
@@ -37,7 +36,7 @@ Object? _createDataModel(
 class MyCommentsScreen extends StatelessWidget {
   const MyCommentsScreen({Key? key}) : super(key: key);
 
-  // Fungsi untuk menangani navigasi saat kartu komentar di-klik
+  //Fungsi untuk menangani navigasi saat kartu komentar di-klik
   Future<void> _navigateToDetail(BuildContext context, String itemId) async {
     final docSnapshot = await FirebaseFirestore.instance
         .collection('koleksi')
@@ -64,7 +63,7 @@ class MyCommentsScreen extends StatelessWidget {
     }
   }
 
-  // # FUNGSI BARU: Untuk menampilkan dialog konfirmasi hapus
+  //FUNGSI Untuk menampilkan dialog konfirmasi hapus
   void _showDeleteConfirmationDialog(BuildContext context, String commentId) {
     showDialog(
       context: context,

@@ -5,14 +5,14 @@ class DetailSliverAppBar<T> extends StatelessWidget {
   final T data;
   final String Function(T) getImageUrl;
   final String Function(T) getCategoryIconPath;
-  final Widget favoriteButton; // <-- DITAMBAHKAN
+  final Widget favoriteButton;
 
   const DetailSliverAppBar({
     Key? key,
     required this.data,
     required this.getImageUrl,
     required this.getCategoryIconPath,
-    required this.favoriteButton, // <-- DITAMBAHKAN
+    required this.favoriteButton,
   }) : super(key: key);
 
   @override
@@ -39,7 +39,7 @@ class DetailSliverAppBar<T> extends StatelessWidget {
       actions: [
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: favoriteButton, // <-- Tombol favorit ditempatkan di sini
+          child: favoriteButton, //tombol favorite
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),

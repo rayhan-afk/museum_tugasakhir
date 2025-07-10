@@ -7,10 +7,10 @@ import 'package:museum_tugasakhir/providers/theme_providers.dart';
 import 'package:museum_tugasakhir/screens/drawer/comments_screen.dart';
 import 'package:museum_tugasakhir/screens/drawer/favorite_screen.dart';
 import 'package:museum_tugasakhir/screens/quiz/quiz_screen.dart';
+import 'package:museum_tugasakhir/screens/setting_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Ganti 'museum_tugasakhir' dengan nama proyek Anda
 import 'package:museum_tugasakhir/widgets/icon_widget.dart';
 import 'package:museum_tugasakhir/widgets/social_icon.dart';
 import 'package:museum_tugasakhir/services/auth_service.dart';
@@ -161,13 +161,8 @@ class MainDrawer extends StatelessWidget {
             onTap: () async {
               // <-- Dibuat async
               final user = Provider.of<User?>(context, listen: false);
-
-              // # PERBAIKAN: Simpan referensi ke ScaffoldMessenger SEBELUM pop
               final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-              // Tutup drawer
               Navigator.pop(context);
-
               if (user != null) {
                 // Jika sudah login, langsung navigasi
                 Navigator.push(
@@ -188,14 +183,17 @@ class MainDrawer extends StatelessWidget {
             },
           ),
 
-          // Tombol Setting
-          // IconWidget(
-          //   icon: Icons.settings,
-          //   title: 'Setting',
-          //   onTap: () {
-          //     // TODO: Navigasi ke halaman setting
-          //   },
-          // ),
+          IconWidget(
+            icon: Icons.settings,
+            title: 'Setting',
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
 
           const Spacer(),
 
@@ -219,19 +217,6 @@ class MainDrawer extends StatelessWidget {
               },
             ),
           ],
-
-          // Ikon Sosial Media
-          // Padding(
-          //   padding: const EdgeInsets.symmetric(vertical: 10.0),
-          //   child: Row(
-          //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          //     children: [
-          //       SocialIcon(icon: Icons.facebook, onTap: () {}),
-          //       SocialIcon(icon: FontAwesomeIcons.instagram, onTap: () {}),
-          //       SocialIcon(icon: FontAwesomeIcons.twitter, onTap: () {}),
-          //     ],
-          //   ),
-          // ),
         ],
       ),
     );
