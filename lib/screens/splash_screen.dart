@@ -109,7 +109,15 @@ class _SplashScreenState extends State<SplashScreen> {
                   'Bandung',
                   style: GoogleFonts.montserrat(
                     fontSize: 24,
-                    color: Colors.white.withOpacity(0.8),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 10.0,
+                        color: Colors.black.withOpacity(0.2),
+                        offset: const Offset(2.0, 2.0),
+                      ),
+                    ],
                   ),
                 ),
               ),
