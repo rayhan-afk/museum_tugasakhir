@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -78,16 +79,58 @@ class MainDrawer extends StatelessWidget {
 
           // Gambar Museum
           Center(
-            child: Container(
-              width: 260,
-              height: 180,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12.0),
-                image: const DecorationImage(
-                  image: AssetImage('assets/image/museumgambar.jpg'),
-                  fit: BoxFit.cover,
-                ),
-              ),
+            child: FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('museum_info')
+                  .doc('info_utama')
+                  .get(),
+              builder: (context, snapshot) {
+                // Tampilan saat loading
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Container(
+                    width: 260,
+                    height: 180,
+                    color: Colors.grey[200],
+                    child: const Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                // Tampilan jika error atau tidak ada data
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return Container(
+                    width: 260,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12.0),
+                      image: const DecorationImage(
+                        image: AssetImage(
+                            'assets/image/museumgambar.jpg'), // Gambar fallback
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                }
+
+                final data = snapshot.data!.data() as Map<String, dynamic>;
+                // Menggunakan field 'url_gambar_museum' yang sudah ada
+                final imageUrl = data['imageUrl'] as String?;
+
+                return Container(
+                  width: 260,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.0),
+                    image: DecorationImage(
+                      // Gunakan NetworkImage jika URL ada, jika tidak gunakan gambar fallback
+                      image: (imageUrl != null && imageUrl.isNotEmpty)
+                          ? NetworkImage(imageUrl)
+                          : const AssetImage('assets/image/museumgambar.jpg')
+                              as ImageProvider,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           const SizedBox(height: 20),

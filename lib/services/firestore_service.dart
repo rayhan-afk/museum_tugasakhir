@@ -95,6 +95,18 @@ class FirestoreService {
     }
   }
 
+  Future<void> updateComment(String commentId, String newText) async {
+    try {
+      await _commentsCollection.doc(commentId).update({
+        'text': newText,
+        'isEdited': true, // Menandai bahwa komentar ini pernah diedit
+        'editedAt': FieldValue.serverTimestamp(), // Menyimpan waktu edit
+      });
+    } catch (e) {
+      print('Error saat mengedit komentar: $e');
+    }
+  }
+
   Future<List<DocumentSnapshot>> getAllQuizzes() async {
     try {
       final querySnapshot = await _quizzesCollection.get();

@@ -205,6 +205,7 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                 getImageUrl: widget.getImageUrl,
                 getCategoryIconPath: widget.getCategoryIconPath,
                 favoriteButton: favoriteButton,
+                getTitle: widget.getTitle,
               );
             },
           ),

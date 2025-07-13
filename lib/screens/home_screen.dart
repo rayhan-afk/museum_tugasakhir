@@ -13,7 +13,7 @@ class _MuseumScreenState extends State<MuseumScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.85);
   int _currentPage = 0;
 
-  // ✅ Future hanya diambil sekali, tidak menyebabkan rebuild
+  // Future hanya diambil sekali, tidak menyebabkan rebuild
   late final Future<DocumentSnapshot<Map<String, dynamic>>> _museumInfoFuture;
 
   @override
