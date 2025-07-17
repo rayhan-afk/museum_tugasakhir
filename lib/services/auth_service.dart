@@ -1,21 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:museum_tugasakhir/services/firestore_service.dart'; // <-- IMPORT BARU
+import 'package:museum_tugasakhir/services/firestore_service.dart';
 
 class AuthService {
   // Membuat instance dari Firebase Auth, Google Sign-In, dan Firestore Service
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirestoreService _firestoreService =
-      FirestoreService(); // <-- TAMBAHKAN INI
+  final FirestoreService _firestoreService = FirestoreService();
 
   // Stream untuk mendengarkan perubahan status login
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
   // Getter untuk mendapatkan pengguna yang sedang login saat ini
   User? get currentUser => _firebaseAuth.currentUser;
-
-  // --- FUNGSI UTAMA UNTUK OTENTIKASI ---
 
   // 1. Fungsi untuk memulai proses Login dengan Google
   Future<User?> signInWithGoogle() async {

@@ -1,11 +1,8 @@
-// File: lib/providers/theme_provider.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Kelas ini akan menjadi "Pengontrol Tema" untuk seluruh aplikasi.
-// Ia menggunakan ChangeNotifier untuk memberitahu widget lain saat ada perubahan.
+// menggunakan ChangeNotifier untuk memberitahu widget lain saat ada perubahan.
 class ThemeProvider with ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.light; // Defaultnya adalah mode terang
 

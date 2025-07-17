@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -62,6 +63,73 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     super.dispose();
   }
 
+// --- FUNGSI BARU UNTUK LENCANA ---
+
+  /// Fungsi untuk menampilkan dialog saat lencana baru didapatkan.
+  void _showBadgeAwardedDialog(DocumentSnapshot badgeDoc) {
+    final badgeData = badgeDoc.data() as Map<String, dynamic>;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Row(
+          children: [
+            Icon(FontAwesomeIcons.award, color: Colors.orange[700]),
+            const SizedBox(width: 10),
+            const Text('Pencapaian Baru!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Selamat, Anda mendapatkan lencana:',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              badgeData['name'] ?? 'Lencana Baru',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              badgeData['description'] ?? '',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Keren!'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Fungsi untuk memeriksa apakah ada lencana baru yang didapat.
+  void _checkAndShowBadge(Future<DocumentSnapshot?> badgeFuture) async {
+    final badgeDoc = await badgeFuture;
+    if (badgeDoc != null && mounted) {
+      _showBadgeAwardedDialog(badgeDoc);
+    }
+  }
+
+  /// Melacak bahwa pengguna telah melihat halaman ini.
+  void _trackView() {
+    // Menunggu sebentar agar Provider siap
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = Provider.of<User?>(context, listen: false);
+      if (user != null) {
+        final future = _firestoreService.trackDetailView(
+            user.uid, widget.getItemId(widget.data));
+        _checkAndShowBadge(future);
+      }
+    });
+  }
+
 //Fungsi untuk memformat timestamp menjadi tanggal
   String _formatTimestamp(Timestamp? timestamp) {
     if (timestamp == null) return '';
@@ -85,6 +153,10 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
           : '${widget.getTitle(widget.data)} ditambahkan ke favorit';
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
+
+      _checkAndShowBadge(_firestoreService.trackFavoriteAction(user.uid));
+      _checkAndShowBadge(_firestoreService.trackActiveVisitor(
+          user.uid, widget.getItemId(widget.data)));
     }
   }
 
@@ -154,6 +226,12 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
 
     _commentController.clear();
     FocusScope.of(context).unfocus();
+
+    // Cek lencana setelah berkomentar
+    _checkAndShowBadge(_firestoreService.trackCommentPost(
+        user.uid, widget.getItemId(widget.data)));
+    _checkAndShowBadge(_firestoreService.trackActiveVisitor(
+        user.uid, widget.getItemId(widget.data)));
   }
 
   // Widget untuk membuat titik-titik indikator galeri

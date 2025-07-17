@@ -6,7 +6,7 @@ import 'package:museum_tugasakhir/providers/theme_providers.dart';
 import 'package:museum_tugasakhir/screens/drawer/comments_screen.dart';
 import 'package:museum_tugasakhir/screens/drawer/favorite_screen.dart';
 import 'package:museum_tugasakhir/screens/quiz/quiz_screen.dart';
-import 'package:museum_tugasakhir/screens/setting_screen.dart';
+import 'package:museum_tugasakhir/screens/drawer/setting_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

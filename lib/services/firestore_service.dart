@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Mendapatkan referensi ke semua collection yang kita gunakan
+  // Mendapatkan referensi ke semua collection yang digunakan
   CollectionReference<Map<String, dynamic>> get _usersCollection =>
       _db.collection('users');
   CollectionReference<Map<String, dynamic>> get _koleksiCollection =>
@@ -15,6 +15,8 @@ class FirestoreService {
       _db.collection('quiz');
   CollectionReference<Map<String, dynamic>> get _leaderboardCollection =>
       _db.collection('leaderboard');
+  CollectionReference<Map<String, dynamic>> get _badgesCollection =>
+      _db.collection('badges');
 
   /// Menambah atau menghapus item dari favorit pengguna menggunakan Transaction.
   Future<void> toggleFavorite(
@@ -197,6 +199,155 @@ class FirestoreService {
     return _leaderboardCollection
         .orderBy('score', descending: true)
         .orderBy('lastPlayed', descending: true)
+        .snapshots();
+  }
+
+  // --- FUNGSI BARU UNTUK FITUR LENCANA (BADGES) ---
+
+  /// Fungsi utama untuk memberikan lencana jika syarat terpenuhi.
+  Future<DocumentSnapshot?> _checkAndAwardBadge(
+      String userId, String badgeId) async {
+    final userBadgesRef =
+        _usersCollection.doc(userId).collection('earnedBadges').doc(badgeId);
+    final doc = await userBadgesRef.get();
+
+    if (!doc.exists) {
+      final badgeInfo = await _badgesCollection.doc(badgeId).get();
+      if (badgeInfo.exists) {
+        await userBadgesRef.set({
+          'name': badgeInfo.data()?['name'],
+          'description': badgeInfo.data()?['description'],
+          'iconName': badgeInfo.data()?['iconName'],
+          'iconColor': badgeInfo.data()?['iconColor'],
+          'earnedAt': FieldValue.serverTimestamp(),
+        });
+        return badgeInfo;
+      }
+    }
+    return null;
+  }
+
+  /// Melacak setiap kali pengguna melihat halaman detail koleksi.
+  Future<DocumentSnapshot?> trackDetailView(
+      String userId, String itemId) async {
+    final userRef = _usersCollection.doc(userId);
+    // Menggunakan arrayUnion untuk memastikan ID item hanya ditambahkan sekali
+    await userRef.set({
+      'viewedItems': FieldValue.arrayUnion([itemId])
+    }, SetOptions(merge: true));
+
+    final userData = await userRef.get();
+    final viewedItems =
+        List<String>.from(userData.data()?['viewedItems'] ?? []);
+    if (viewedItems.length >= 10) {
+      return await _checkAndAwardBadge(userId, 'penjelajah_museum');
+    }
+    return null;
+  }
+
+  /// Melacak setiap kali pengguna memindai QR Code.
+  Future<DocumentSnapshot?> trackQrScan(String userId, String itemId) async {
+    final userRef = _usersCollection.doc(userId);
+    await userRef.set({
+      'scannedItems': FieldValue.arrayUnion([itemId])
+    }, SetOptions(merge: true));
+
+    final userData = await userRef.get();
+    final scannedItems =
+        List<String>.from(userData.data()?['scannedItems'] ?? []);
+    if (scannedItems.length >= 8) {
+      return await _checkAndAwardBadge(userId, 'si_detektif');
+    }
+    return null;
+  }
+
+  /// Melacak setiap kali pengguna membuka halaman kategori.
+  Future<DocumentSnapshot?> trackCategoryView(
+      String userId, String categoryName) async {
+    final userRef = _usersCollection.doc(userId);
+    await userRef.set({
+      'categoriesOpened': FieldValue.arrayUnion([categoryName])
+    }, SetOptions(merge: true));
+
+    final userData = await userRef.get();
+    final categories =
+        List<String>.from(userData.data()?['categoriesOpened'] ?? []);
+    if (categories
+        .toSet()
+        .containsAll(['Artefak', 'Batuan', 'Fosil', 'Mineral'])) {
+      return await _checkAndAwardBadge(userId, 'tur_virtual_lengkap');
+    }
+    return null;
+  }
+
+  /// Melacak saat pengguna memfavoritkan item.
+  Future<DocumentSnapshot?> trackFavoriteAction(String userId) async {
+    final userRef = _usersCollection.doc(userId);
+    final favoritesSnapshot =
+        await userRef.collection('favorites').count().get();
+    final favoritesCount = favoritesSnapshot.count ?? 0;
+
+    await userRef
+        .set({'favoritedItemsCount': favoritesCount}, SetOptions(merge: true));
+
+    if (favoritesCount >= 10) {
+      return await _checkAndAwardBadge(userId, 'pecinta_koleksi');
+    }
+    return null;
+  }
+
+  /// Melacak setiap kali pengguna mengirim komentar.
+  Future<DocumentSnapshot?> trackCommentPost(
+      String userId, String itemId) async {
+    final userRef = _usersCollection.doc(userId);
+    await userRef.set({
+      'commentedOnItems': FieldValue.arrayUnion([itemId])
+    }, SetOptions(merge: true));
+
+    final userData = await userRef.get();
+    final commentedItems =
+        List<String>.from(userData.data()?['commentedOnItems'] ?? []);
+    if (commentedItems.length >= 5) {
+      return await _checkAndAwardBadge(userId, 'pemberi_suara');
+    }
+    return null;
+  }
+
+  /// Melacak apakah pengguna menjadi "Pengunjung Aktif".
+  Future<DocumentSnapshot?> trackActiveVisitor(
+      String userId, String itemId) async {
+    final favoriteDoc = await _usersCollection
+        .doc(userId)
+        .collection('favorites')
+        .doc(itemId)
+        .get();
+    final commentQuery = await _commentsCollection
+        .where('itemId', isEqualTo: itemId)
+        .where('authorId', isEqualTo: userId)
+        .limit(1)
+        .get();
+
+    if (favoriteDoc.exists && commentQuery.docs.isNotEmpty) {
+      return await _checkAndAwardBadge(userId, 'pengunjung_aktif');
+    }
+    return null;
+  }
+
+  /// Melacak skor kuis untuk lencana "Ahli Sejarah".
+  Future<DocumentSnapshot?> trackQuizScore(String userId, int score) async {
+    if (score >= 90) {
+      return await _checkAndAwardBadge(userId, 'ahli_sejarah');
+    }
+    return null;
+  }
+
+  /// Stream untuk mendapatkan semua lencana yang telah dimiliki pengguna.
+  Stream<QuerySnapshot<Map<String, dynamic>>> getEarnedBadgesStream(
+      String userId) {
+    return _usersCollection
+        .doc(userId)
+        .collection('earnedBadges')
+        .orderBy('earnedAt', descending: true)
         .snapshots();
   }
 }
