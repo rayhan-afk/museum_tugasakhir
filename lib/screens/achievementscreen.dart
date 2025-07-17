@@ -39,7 +39,7 @@ class AchievementsScreen extends StatelessWidget {
   Color _getColorFromHex(String hexColor) {
     hexColor = hexColor.toUpperCase().replaceAll("#", "");
     if (hexColor.length == 6) {
-      hexColor = "FF" + hexColor;
+      hexColor = "FF$hexColor";
     }
     return Color(int.parse(hexColor, radix: 16));
   }
@@ -52,7 +52,8 @@ class AchievementsScreen extends StatelessWidget {
       return Scaffold(
         appBar: AppBar(title: const Text('Pencapaian')),
         body: const Center(
-            child: Text('Silakan login untuk melihat pencapaian Anda.')),
+          child: Text('Silakan login untuk melihat pencapaian Anda.'),
+        ),
       );
     }
 
@@ -81,13 +82,19 @@ class AchievementsScreen extends StatelessWidget {
                         : null,
                   ),
                   const SizedBox(height: 16),
-                  Text(user.displayName ?? 'Pengguna',
-                      style: GoogleFonts.montserrat(
-                          fontSize: 22, fontWeight: FontWeight.bold)),
+                  Text(
+                    user.displayName ?? 'Pengguna',
+                    style: GoogleFonts.montserrat(
+                        fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 4),
-                  Text(user.email ?? '',
-                      style: GoogleFonts.roboto(
-                          fontSize: 16, color: Colors.grey[600])),
+                  Text(
+                    user.email ?? '',
+                    style: GoogleFonts.roboto(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -97,7 +104,6 @@ class AchievementsScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: StreamBuilder<QuerySnapshot>(
-                // 1. Ambil daftar SEMUA lencana yang tersedia
                 stream: FirestoreService().getAllBadgesStream(),
                 builder: (context, allBadgesSnapshot) {
                   if (allBadgesSnapshot.connectionState ==
@@ -112,11 +118,9 @@ class AchievementsScreen extends StatelessWidget {
 
                   final allBadges = allBadgesSnapshot.data!.docs;
 
-                  // 2. Ambil daftar lencana yang SUDAH DIDAPAT oleh pengguna
                   return StreamBuilder<QuerySnapshot>(
                     stream: FirestoreService().getEarnedBadgesStream(user.uid),
                     builder: (context, earnedBadgesSnapshot) {
-                      // Buat Set dari ID lencana yang sudah didapat untuk pengecekan cepat
                       final Set<String> earnedBadgeIds =
                           earnedBadgesSnapshot.hasData
                               ? earnedBadgesSnapshot.data!.docs
@@ -138,9 +142,7 @@ class AchievementsScreen extends StatelessWidget {
                         itemBuilder: (context, index) {
                           final badgeDoc = allBadges[index];
                           final badgeData =
-                              badgeDoc.data() as Map<String, dynamic>;
-
-                          // 3. Cek apakah lencana ini sudah didapatkan
+                              badgeDoc.data()! as Map<String, dynamic>;
                           final bool isEarned =
                               earnedBadgeIds.contains(badgeDoc.id);
 
@@ -149,32 +151,45 @@ class AchievementsScreen extends StatelessWidget {
                           final iconColor = _getColorFromHex(
                               badgeData['iconColor'] ?? '#000000');
 
-                          // 4. Terapkan gaya yang berbeda
-                          return Opacity(
-                            opacity: isEarned
-                                ? 1.0
-                                : 0.3, // Buram jika belum didapat
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircleAvatar(
-                                  radius: 35,
-                                  backgroundColor: iconColor
-                                      .withOpacity(isEarned ? 0.15 : 0.05),
-                                  child: FaIcon(iconData,
-                                      color: isEarned ? iconColor : Colors.grey,
-                                      size: 30),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  badgeData['name'] ?? 'Lencana',
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
+                          // # PERUBAHAN: Widget dibungkus dengan Tooltip
+                          return Tooltip(
+                            message: badgeData['description'] ??
+                                'Deskripsi tidak tersedia.',
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.symmetric(horizontal: 20),
+                            textStyle: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Opacity(
+                              opacity: isEarned ? 1.0 : 0.3,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 35,
+                                    backgroundColor: iconColor
+                                        .withOpacity(isEarned ? 0.15 : 0.05),
+                                    child: FaIcon(iconData,
+                                        color:
+                                            isEarned ? iconColor : Colors.grey,
+                                        size: 30),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    badgeData['name'] ?? 'Lencana',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.montserrat(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },

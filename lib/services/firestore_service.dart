@@ -46,17 +46,21 @@ class FirestoreService {
 
   Future<void> updateUserData(User user) async {
     final docRef = _usersCollection.doc(user.uid);
+    final doc = await docRef.get();
 
-    return docRef.set(
-        {
-          'userId': user.uid,
-          'userName': user.displayName,
-          'email': user.email,
-        },
-        SetOptions(
-            merge:
-                true)); // SetOptions(merge: true) akan membuat dokumen baru jika belum ada,
-    // atau memperbarui yang sudah ada tanpa menghapus data lama (seperti sub-collection 'favorites').
+    if (!doc.exists) {
+      // Jika pengguna baru, buat data profil dengan badgesCount = 0
+      return docRef.set({
+        'userId': user.uid,
+        'userName': user.displayName,
+        'email': user.email,
+        'lastLogin': FieldValue.serverTimestamp(),
+        'badgesCount': 0, // Inisialisasi hitungan lencana
+      }, SetOptions(merge: true));
+    } else {
+      // Jika pengguna lama, cukup update waktu login
+      return docRef.update({'lastLogin': FieldValue.serverTimestamp()});
+    }
   }
 
   /// Stream untuk mendengarkan status favorit sebuah item secara real-time.
@@ -207,13 +211,14 @@ class FirestoreService {
   /// Fungsi utama untuk memberikan lencana jika syarat terpenuhi.
   Future<DocumentSnapshot?> _checkAndAwardBadge(
       String userId, String badgeId) async {
-    final userBadgesRef =
-        _usersCollection.doc(userId).collection('earnedBadges').doc(badgeId);
+    final userRef = _usersCollection.doc(userId);
+    final userBadgesRef = userRef.collection('earnedBadges').doc(badgeId);
     final doc = await userBadgesRef.get();
 
     if (!doc.exists) {
       final badgeInfo = await _badgesCollection.doc(badgeId).get();
       if (badgeInfo.exists) {
+        // Berikan lencana kepada pengguna
         await userBadgesRef.set({
           'name': badgeInfo.data()?['name'],
           'description': badgeInfo.data()?['description'],
@@ -221,10 +226,21 @@ class FirestoreService {
           'iconColor': badgeInfo.data()?['iconColor'],
           'earnedAt': FieldValue.serverTimestamp(),
         });
+        // # PERUBAHAN: Tambah hitungan lencana di dokumen pengguna
+        await userRef.set(
+            {'badgesCount': FieldValue.increment(1)}, SetOptions(merge: true));
         return badgeInfo;
       }
     }
     return null;
+  }
+
+  // # FUNGSI BARU: Untuk mengambil data pengguna dengan lencana terbanyak
+  Stream<QuerySnapshot<Map<String, dynamic>>> getTopExplorerStream() {
+    return _usersCollection
+        .orderBy('badgesCount', descending: true)
+        .limit(1)
+        .snapshots();
   }
 
   /// Melacak setiap kali pengguna melihat halaman detail koleksi.
