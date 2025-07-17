@@ -1,6 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:museum_tugasakhir/services/firestore_service.dart';
 
 class MuseumScreen extends StatefulWidget {
   const MuseumScreen({super.key});
@@ -12,14 +14,11 @@ class MuseumScreen extends StatefulWidget {
 class _MuseumScreenState extends State<MuseumScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.85);
   int _currentPage = 0;
-
-  // Future hanya diambil sekali, tidak menyebabkan rebuild
-  late final Future<DocumentSnapshot<Map<String, dynamic>>> _museumInfoFuture;
+  late Future<DocumentSnapshot<Map<String, dynamic>>> _museumInfoFuture;
 
   @override
   void initState() {
     super.initState();
-
     _museumInfoFuture = FirebaseFirestore.instance
         .collection('museum_info')
         .doc('info_utama')
@@ -33,6 +32,12 @@ class _MuseumScreenState extends State<MuseumScreen> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Widget _buildInfoTile(
@@ -111,15 +116,15 @@ class _MuseumScreenState extends State<MuseumScreen> {
     );
   }
 
-  Widget _buildPageIndicator(bool isActive) {
+  Widget _buildPageIndicator(int index) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
       margin: const EdgeInsets.symmetric(horizontal: 4.0),
       height: 8.0,
-      width: isActive ? 24.0 : 8.0,
+      width: _currentPage == index ? 24.0 : 8.0,
       decoration: BoxDecoration(
-        color: isActive
+        color: _currentPage == index
             ? Theme.of(context).colorScheme.primary
             : Colors.grey.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
@@ -127,8 +132,9 @@ class _MuseumScreenState extends State<MuseumScreen> {
     );
   }
 
-  Widget _buildStatsCard(
-      BuildContext context, IconData icon, String title, Future<int> future) {
+  // Widget untuk menampilkan kartu statistik angka
+  Widget _buildStatsCard(BuildContext context, IconData icon, String title,
+      Future<AggregateQuerySnapshot> future) {
     return Expanded(
       child: Card(
         elevation: 2,
@@ -143,7 +149,7 @@ class _MuseumScreenState extends State<MuseumScreen> {
               Text(title,
                   style: GoogleFonts.montserrat(fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
-              FutureBuilder<int>(
+              FutureBuilder<AggregateQuerySnapshot>(
                 future: future,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -164,7 +170,7 @@ class _MuseumScreenState extends State<MuseumScreen> {
                             fontSize: 24, fontWeight: FontWeight.bold));
                   }
                   return Text(
-                    snapshot.data.toString(),
+                    (snapshot.data?.count ?? 0).toString(),
                     style: GoogleFonts.montserrat(
                         fontSize: 24, fontWeight: FontWeight.bold),
                   );
@@ -177,10 +183,52 @@ class _MuseumScreenState extends State<MuseumScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  // # FUNGSI BARU: Widget untuk menampilkan kartu Penjelajah Teratas
+  Widget _buildTopExplorerCard(BuildContext context) {
+    return Expanded(
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: FirestoreService().getTopExplorerStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                    height: 95, // Sesuaikan tinggi agar konsisten
+                    child: Center(child: CircularProgressIndicator()));
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const SizedBox(
+                    height: 95, child: Center(child: Text('Belum ada data')));
+              }
+
+              final topUser = snapshot.data!.docs.first.data();
+              return Column(
+                children: [
+                  Icon(Icons.military_tech,
+                      size: 32, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Penjelajah Teratas',
+                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    topUser['userName'] ?? '...',
+                    style: GoogleFonts.montserrat(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -253,51 +301,55 @@ class _MuseumScreenState extends State<MuseumScreen> {
                       const Divider(height: 24),
                       _buildInfoTile(
                           context, Icons.info_outline, 'Deskripsi', deskripsi),
+
                       if (galleryUrls.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        Text('Galeri Gambar',
-                            style: GoogleFonts.montserrat(
-                                fontSize: 22, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 30),
+                        Text(
+                          'Galeri',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         SizedBox(
-                          height: 200,
+                          height: 220,
                           child: PageView.builder(
+                            dragStartBehavior: DragStartBehavior.start,
                             controller: _pageController,
                             itemCount: galleryUrls.length,
                             itemBuilder: (context, index) {
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 4.0),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    _showZoomableImage(
-                                        context, galleryUrls[index]);
-                                  },
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(
-                                      galleryUrls[index],
-                                      fit: BoxFit.cover,
-                                    ),
+                              return GestureDetector(
+                                onTap: () => _showZoomableImage(
+                                    context, galleryUrls[index]),
+                                child: Card(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  elevation: 6,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16)),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: Image.network(
+                                    galleryUrls[index],
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
                               );
                             },
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        if (galleryUrls.length > 1)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children:
-                                List.generate(galleryUrls.length, (index) {
-                              return _buildPageIndicator(index == _currentPage);
-                            }),
-                          )
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(galleryUrls.length,
+                              (index) => _buildPageIndicator(index)),
+                        ),
                       ],
-                      const Divider(height: 40),
+
+                      // # PERUBAHAN: Bagian Statistik Ditambahkan di Sini
+                      const SizedBox(height: 30),
                       Text(
-                        'Statistik Aplikasi',
+                        'Statistik & Pencapaian',
                         style: GoogleFonts.montserrat(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -305,6 +357,7 @@ class _MuseumScreenState extends State<MuseumScreen> {
                       ),
                       const SizedBox(height: 16),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildStatsCard(
                             context,
@@ -313,20 +366,11 @@ class _MuseumScreenState extends State<MuseumScreen> {
                             FirebaseFirestore.instance
                                 .collection('users')
                                 .count()
-                                .get()
-                                .then((snapshot) => snapshot.count ?? 0),
+                                .get(),
                           ),
                           const SizedBox(width: 16),
-                          _buildStatsCard(
-                            context,
-                            Icons.sports_esports_outlined,
-                            'Pemain Kuis',
-                            FirebaseFirestore.instance
-                                .collection('leaderboard')
-                                .count()
-                                .get()
-                                .then((snapshot) => snapshot.count ?? 0),
-                          ),
+                          // Mengganti kartu pemain kuis dengan kartu penjelajah teratas
+                          _buildTopExplorerCard(context),
                         ],
                       ),
                     ],

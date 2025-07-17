@@ -144,24 +144,63 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
                                 createDetailScreen(itemData)));
                   }
                 },
-                child: Card(
-                  elevation: 3,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15)),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 15),
-                    leading: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.grey[200],
-                      backgroundImage: NetworkImage(data['imageUrl'] ?? ''),
-                    ),
-                    title: Text(data['title'] ?? 'Tanpa Judul',
-                        style: GoogleFonts.montserrat(
-                            fontWeight: FontWeight.bold)),
-                    subtitle: Text(data['year'] ?? ''),
-                    trailing: const Icon(Icons.chevron_right),
+                child: Container(
+                  height: 250, // Tinggi kartu bisa disesuaikan
+                  clipBehavior: Clip.antiAlias,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      )
+                    ],
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(
+                        data['imageUrl'] ??
+                            'https://placehold.co/600x400/EEE/31343C',
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, progress) =>
+                            progress == null
+                                ? child
+                                : const Center(
+                                    child: CircularProgressIndicator()),
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(
+                                child: Icon(Icons.broken_image, size: 40)),
+                      ),
+                      // Lapisan gradasi gelap di bawah agar teks lebih terbaca
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.center,
+                            colors: <Color>[Colors.black87, Colors.transparent],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 16,
+                        left: 16,
+                        right: 16,
+                        child: Text(
+                          data['title'] ?? 'Tanpa Judul',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [
+                              const Shadow(blurRadius: 4, color: Colors.black54)
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );

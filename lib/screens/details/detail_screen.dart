@@ -1,3 +1,4 @@
+// (Tidak diubah) — Semua import tetap
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -39,10 +40,10 @@ class DetailScreen<T> extends StatefulWidget {
 class _DetailScreenState<T> extends State<DetailScreen<T>> {
   final FirestoreService _firestoreService = FirestoreService();
   final _commentController = TextEditingController();
-
-  // Controller dan state untuk galeri gambar di bawah
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isCommentSectionVisible = false;
+  bool _isPostingComment = false;
 
   @override
   void initState() {
@@ -54,6 +55,7 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
         });
       }
     });
+    _trackView();
   }
 
   @override
@@ -63,9 +65,6 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     super.dispose();
   }
 
-// --- FUNGSI BARU UNTUK LENCANA ---
-
-  /// Fungsi untuk menampilkan dialog saat lencana baru didapatkan.
   void _showBadgeAwardedDialog(DocumentSnapshot badgeDoc) {
     final badgeData = badgeDoc.data() as Map<String, dynamic>;
     showDialog(
@@ -82,7 +81,7 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Selamat, Anda mendapatkan lencana:',
               textAlign: TextAlign.center,
             ),
@@ -109,7 +108,6 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     );
   }
 
-  /// Fungsi untuk memeriksa apakah ada lencana baru yang didapat.
   void _checkAndShowBadge(Future<DocumentSnapshot?> badgeFuture) async {
     final badgeDoc = await badgeFuture;
     if (badgeDoc != null && mounted) {
@@ -117,20 +115,19 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     }
   }
 
-  /// Melacak bahwa pengguna telah melihat halaman ini.
   void _trackView() {
-    // Menunggu sebentar agar Provider siap
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = Provider.of<User?>(context, listen: false);
       if (user != null) {
         final future = _firestoreService.trackDetailView(
-            user.uid, widget.getItemId(widget.data));
+          user.uid,
+          widget.getItemId(widget.data),
+        );
         _checkAndShowBadge(future);
       }
     });
   }
 
-//Fungsi untuk memformat timestamp menjadi tanggal
   String _formatTimestamp(Timestamp? timestamp) {
     if (timestamp == null) return '';
     return DateFormat('d MMMM yyyy', 'id_ID').format(timestamp.toDate());
@@ -140,32 +137,34 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Anda harus login untuk menambahkan ke favorit.')),
+          content: Text('Anda harus login untuk menambahkan ke favorit.'),
+        ),
       );
-    } else {
-      _firestoreService.toggleFavorite(
-        user.uid,
-        widget.getItemId(widget.data),
-        widget.toMap(widget.data),
-      );
-      final message = isFavorited
-          ? '${widget.getTitle(widget.data)} dihapus dari favorit'
-          : '${widget.getTitle(widget.data)} ditambahkan ke favorit';
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
-      _firestoreService.toggleFavorite(
-          user.uid, widget.getItemId(widget.data), widget.toMap(widget.data));
-      _checkAndShowBadge(_firestoreService.trackFavoriteAction(user.uid));
-      _checkAndShowBadge(_firestoreService.trackActiveVisitor(
-          user.uid, widget.getItemId(widget.data)));
+      return;
     }
+
+    _firestoreService.toggleFavorite(
+      user.uid,
+      widget.getItemId(widget.data),
+      widget.toMap(widget.data),
+    );
+
+    final message = isFavorited
+        ? '${widget.getTitle(widget.data)} dihapus dari favorit'
+        : '${widget.getTitle(widget.data)} ditambahkan ke favorit';
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+
+    _checkAndShowBadge(_firestoreService.trackFavoriteAction(user.uid));
+    _checkAndShowBadge(_firestoreService.trackActiveVisitor(
+        user.uid, widget.getItemId(widget.data)));
   }
 
-  //Fungsi untuk menampilkan gambar zoomable
   void _showZoomableImage(BuildContext context, String imageUrl) {
     showDialog(
       context: context,
-      barrierColor: Colors.black87, // Latar belakang semi-transparan
+      barrierColor: Colors.black87,
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
@@ -173,14 +172,12 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
           child: Stack(
             alignment: Alignment.center,
             children: <Widget>[
-              // Widget untuk zoom dan pan gambar
               InteractiveViewer(
                 panEnabled: true,
                 minScale: 0.5,
                 maxScale: 4.0,
                 child: Image.network(imageUrl),
               ),
-              // Tombol close di pojok kanan atas
               Positioned(
                 top: 0,
                 right: 0,
@@ -201,41 +198,71 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
     );
   }
 
+  // --- FUNGSI MENGIRIM KOMENTAR (DIPERBARUI DENGAN DEBOUNCE) ---
   Future<void> _postComment() async {
+    // Jika sedang mengirim, jangan lakukan apa-apa
+    if (_isPostingComment) return;
+
+    // Tandai bahwa proses pengiriman dimulai
+    setState(() {
+      _isPostingComment = true;
+    });
+
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Anda harus login untuk berkomentar.')),
       );
+      setState(() {
+        _isPostingComment = false;
+      }); // Aktifkan kembali tombol jika gagal
       return;
     }
 
     final commentText = _commentController.text.trim();
-    if (commentText.isEmpty) return;
+    if (commentText.isEmpty) {
+      setState(() {
+        _isPostingComment = false;
+      }); // Aktifkan kembali tombol jika gagal
+      return;
+    }
 
-    final T currentItem = widget.data;
-    await FirebaseFirestore.instance.collection('comments').add({
-      'itemId': widget.getItemId(currentItem),
-      'text': commentText,
-      'authorName': user.displayName ?? 'Pengguna Anonim',
-      'authorId': user.uid,
-      'authorEmail': user.email ?? 'Tidak ada email',
-      'timestamp': FieldValue.serverTimestamp(),
-      'itemTitle': widget.getTitle(currentItem),
-      'itemImageUrl': widget.getImageUrl(currentItem),
-    });
+    try {
+      final T currentItem = widget.data;
+      await FirebaseFirestore.instance.collection('comments').add({
+        'itemId': widget.getItemId(currentItem),
+        'text': commentText,
+        'authorName': user.displayName ?? 'Pengguna Anonim',
+        'authorId': user.uid,
+        'authorEmail': user.email ?? 'Tidak ada email',
+        'authorPhotoUrl': user.photoURL ?? '',
+        'timestamp': FieldValue.serverTimestamp(),
+        'itemTitle': widget.getTitle(currentItem),
+        'itemImageUrl': widget.getImageUrl(currentItem),
+      });
 
-    _commentController.clear();
-    FocusScope.of(context).unfocus();
+      _commentController.clear();
+      FocusScope.of(context).unfocus();
+    } catch (e) {
+      // Tangani jika ada error saat mengirim ke Firestore
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal mengirim komentar.')),
+      );
+    } finally {
+      // Setelah semua selesai (baik berhasil maupun gagal), aktifkan kembali tombolnya
+      if (mounted) {
+        setState(() {
+          _isPostingComment = false;
+        });
+      }
+    }
 
-    // Cek lencana setelah berkomentar
     _checkAndShowBadge(_firestoreService.trackCommentPost(
         user.uid, widget.getItemId(widget.data)));
     _checkAndShowBadge(_firestoreService.trackActiveVisitor(
         user.uid, widget.getItemId(widget.data)));
   }
 
-  // Widget untuk membuat titik-titik indikator galeri
   Widget _buildPageIndicator(bool isActive) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
@@ -280,7 +307,6 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
 
               return DetailSliverAppBar(
                 data: widget.data,
-                // Mengirim satu gambar utama ke AppBar
                 getImageUrl: widget.getImageUrl,
                 getCategoryIconPath: widget.getCategoryIconPath,
                 favoriteButton: favoriteButton,
@@ -288,15 +314,12 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
               );
             },
           ),
-
-          //BAGIAN DESKRIPSI & KONTEN LAINNYA
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Deskripsi Item
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,15 +338,13 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 16),
                   const Divider(),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 16),
                   Text(
                     widget.getDescription(widget.data),
                     style: GoogleFonts.montserrat(fontSize: 14, height: 1.5),
                   ),
-
-                  //GALERI GAMBAR
                   if (imageUrls.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     Text('Galeri Gambar',
@@ -333,14 +354,7 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                     SizedBox(
                       height: 150,
                       child: PageView.builder(
-                        // # PERUBAHAN: Tambahkan onPageChanged
-                        onPageChanged: (index) {
-                          if (user != null) {
-                            final future = _firestoreService
-                                .trackGalleryImageView(user.uid);
-                            _checkAndShowBadge(future);
-                          }
-                        },
+                        controller: _pageController,
                         itemCount: imageUrls.length,
                         itemBuilder: (context, index) {
                           return Padding(
@@ -363,43 +377,17 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // Indikator Titik-titik
                     if (imageUrls.length > 1)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(imageUrls.length, (index) {
                           return _buildPageIndicator(index == _currentPage);
                         }),
-                      )
+                      ),
                   ],
-                  //BAGIAN KOMENTAR
+                  // --- BAGIAN KOMENTAR (DIPERBARUI) ---
                   const Divider(height: 40),
-                  Text('Komentar',
-                      style: GoogleFonts.montserrat(
-                          fontSize: 22, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  if (user != null)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _commentController,
-                            decoration: InputDecoration(
-                              hintText: 'Tulis komentar...',
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.send),
-                          onPressed: _postComment,
-                        ),
-                      ],
-                    )
-                  else
-                    const Text('Silakan login untuk berkomentar.'),
-                  const SizedBox(height: 20),
+
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('comments')
@@ -407,42 +395,162 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                         .orderBy('timestamp', descending: true)
                         .snapshots(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData)
+                      if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
-                      if (snapshot.data!.docs.isEmpty)
-                        return const Center(
-                            child: Text('Jadilah yang pertama berkomentar!'));
+                      }
 
-                      return ListView.builder(
-                        padding: EdgeInsets.zero,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: snapshot.data!.docs.length,
-                        itemBuilder: (context, index) {
-                          final commentData = snapshot.data!.docs[index].data()
-                              as Map<String, dynamic>;
-                          // Ambil data timestamp
-                          final timestamp =
-                              commentData['timestamp'] as Timestamp?;
+                      final comments = snapshot.data?.docs ?? [];
 
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: ListTile(
-                              leading:
-                                  const Icon(Icons.account_circle, size: 40),
-                              title: Text(commentData['authorName'] ?? 'Anonim',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                              subtitle: Text(commentData['text'] ?? ''),
-                              //Menampilkan tanggal di sini
-                              trailing: Text(
-                                _formatTimestamp(timestamp),
-                                style: const TextStyle(
-                                    color: Colors.grey, fontSize: 12),
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _isCommentSectionVisible =
+                                    !_isCommentSectionVisible;
+                              });
+                            },
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Komentar (${comments.length})',
+                                    style: GoogleFonts.montserrat(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  Icon(
+                                    _isCommentSectionVisible
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down,
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        },
+                          ),
+                          if (_isCommentSectionVisible) ...[
+                            const SizedBox(height: 16),
+                            if (user != null)
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _commentController,
+                                      decoration: InputDecoration(
+                                        hintText: 'Tulis komentar...',
+                                        border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12)),
+                                      ),
+                                    ),
+                                  ),
+                                  // # PERUBAHAN 2: Tombol kirim sekarang menampilkan loading
+                                  _isPostingComment
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(12.0),
+                                          child: SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2),
+                                          ),
+                                        )
+                                      : IconButton(
+                                          icon: const Icon(Icons.send),
+                                          onPressed: _postComment,
+                                        ),
+                                ],
+                              )
+                            else
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8)),
+                                child: const Center(
+                                    child: Text(
+                                        'Silakan login untuk berkomentar.')),
+                              ),
+                            const SizedBox(height: 20),
+                            if (comments.isEmpty)
+                              const Center(
+                                  child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 20.0),
+                                child:
+                                    Text('Jadilah yang pertama berkomentar!'),
+                              ))
+                            else
+                              ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: comments.length,
+                                itemBuilder: (context, index) {
+                                  final commentData = comments[index].data()
+                                      as Map<String, dynamic>;
+                                  final timestamp =
+                                      commentData['timestamp'] as Timestamp?;
+                                  final photoUrl =
+                                      commentData['authorPhotoUrl'] as String?;
+
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              CircleAvatar(
+                                                radius: 20,
+                                                backgroundImage:
+                                                    (photoUrl != null &&
+                                                            photoUrl.isNotEmpty)
+                                                        ? NetworkImage(photoUrl)
+                                                        : null,
+                                                child: (photoUrl == null ||
+                                                        photoUrl.isEmpty)
+                                                    ? const Icon(Icons.person)
+                                                    : null,
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  commentData['authorName'] ??
+                                                      'Anonim',
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              Text(
+                                                _formatTimestamp(timestamp),
+                                                style: const TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 12),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            commentData['text'] ?? '',
+                                            style: const TextStyle(height: 1.4),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
+                        ],
                       );
                     },
                   ),
