@@ -1,6 +1,7 @@
 // File: lib/screens/quiz_session_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -109,17 +110,17 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
       }
     }
 
-    // Hitung skor akhir dengan skala 100
-    // Rumus: (Jumlah Benar / Total Soal) * 100
     int finalScore = ((correctCount / _quizDocuments.length) * 100).round();
+    DocumentSnapshot? awardedBadge;
 
-    // Simpan skor akhir (yang sudah berskala 100) ke Firestore
     final user = Provider.of<User?>(context, listen: false);
     if (user != null) {
       await _firestoreService.updateUserScore(user, finalScore);
+      // Cek apakah pengguna mendapatkan lencana "Ahli Sejarah"
+      awardedBadge =
+          await _firestoreService.trackQuizScore(user.uid, finalScore);
     }
 
-    // Tampilkan dialog hasil dengan format skor baru
     if (mounted) {
       showDialog(
         context: context,
@@ -129,28 +130,37 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Skor Akhir Anda:',
-                style: GoogleFonts.montserrat(fontSize: 18),
-              ),
+              // Tampilkan info lencana jika didapatkan
+              if (awardedBadge != null) ...[
+                Text('Selamat!',
+                    style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Icon(FontAwesomeIcons.award,
+                    color: Colors.orange[700], size: 40),
+                const SizedBox(height: 8),
+                Text(
+                  'Anda mendapatkan lencana "${awardedBadge.get('name')}"!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontStyle: FontStyle.italic),
+                ),
+                const Divider(height: 30),
+              ],
+              Text('Skor Akhir Anda:',
+                  style: GoogleFonts.montserrat(fontSize: 18)),
               const SizedBox(height: 10),
-              Text(
-                '$finalScore',
-                style: GoogleFonts.montserrat(
-                    fontSize: 48, fontWeight: FontWeight.bold),
-              ),
+              Text('$finalScore',
+                  style: GoogleFonts.montserrat(
+                      fontSize: 48, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
-              Text(
-                '($correctCount dari ${_quizDocuments.length} soal benar)',
-                style: GoogleFonts.montserrat(fontSize: 16),
-              ),
+              Text('($correctCount dari ${_quizDocuments.length} soal benar)',
+                  style: GoogleFonts.montserrat(fontSize: 16)),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog
-                Navigator.of(context).pop(); // Kembali ke halaman utama kuis
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
               child: const Text('Selesai'),
             ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:museum_tugasakhir/providers/theme_providers.dart';
+import 'package:museum_tugasakhir/screens/achievementscreen.dart';
 import 'package:museum_tugasakhir/screens/drawer/comments_screen.dart';
 import 'package:museum_tugasakhir/screens/drawer/favorite_screen.dart';
 import 'package:museum_tugasakhir/screens/quiz/quiz_screen.dart';
@@ -169,6 +170,18 @@ class MainDrawer extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                       builder: (context) => const MyCommentsScreen()),
+                );
+              },
+            ),
+            IconWidget(
+              icon: FontAwesomeIcons.award,
+              title: 'Pencapaian Saya',
+              onTap: () {
+                Navigator.pop(context); // Tutup drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AchievementsScreen()),
                 );
               },
             ),

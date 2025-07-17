@@ -153,7 +153,8 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
           : '${widget.getTitle(widget.data)} ditambahkan ke favorit';
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
-
+      _firestoreService.toggleFavorite(
+          user.uid, widget.getItemId(widget.data), widget.toMap(widget.data));
       _checkAndShowBadge(_firestoreService.trackFavoriteAction(user.uid));
       _checkAndShowBadge(_firestoreService.trackActiveVisitor(
           user.uid, widget.getItemId(widget.data)));
@@ -330,9 +331,16 @@ class _DetailScreenState<T> extends State<DetailScreen<T>> {
                             fontSize: 22, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     SizedBox(
-                      height: 200, // Tinggi galeri
+                      height: 150,
                       child: PageView.builder(
-                        controller: _pageController,
+                        // # PERUBAHAN: Tambahkan onPageChanged
+                        onPageChanged: (index) {
+                          if (user != null) {
+                            final future = _firestoreService
+                                .trackGalleryImageView(user.uid);
+                            _checkAndShowBadge(future);
+                          }
+                        },
                         itemCount: imageUrls.length,
                         itemBuilder: (context, index) {
                           return Padding(

@@ -1,10 +1,15 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:museum_tugasakhir/data/data.dart';
+import 'package:museum_tugasakhir/helpers/navigation_helper.dart';
 import 'package:museum_tugasakhir/screens/details/details.dart';
+import 'package:museum_tugasakhir/services/firestore_service.dart';
+import 'package:provider/provider.dart';
 
 class CameraScannerPage extends StatefulWidget {
   const CameraScannerPage({Key? key}) : super(key: key);
@@ -15,31 +20,52 @@ class CameraScannerPage extends StatefulWidget {
 
 class _CameraScannerPageState extends State<CameraScannerPage> {
   final MobileScannerController _scannerController = MobileScannerController();
+  final FirestoreService _firestoreService = FirestoreService();
   bool _isProcessing = false;
 
-  // Fungsi helper
-  Widget _createDetailScreen(Object data) {
-    if (data is ArtefakData) return ArtefakDetailScreen(artefakData: data);
-    if (data is BatuanData) return BatuanDetailScreen(batuanData: data);
-    if (data is FosilData) return FosilDetailScreen(fosilData: data);
-    if (data is MineralData) return MineralDetailScreen(mineralData: data);
-    return const Scaffold(body: Center(child: Text('Tipe data tidak valid')));
+// --- Fungsi untuk menampilkan dialog lencana baru ---
+  void _showBadgeAwardedDialog(DocumentSnapshot badgeDoc) {
+    final badgeData = badgeDoc.data() as Map<String, dynamic>;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Row(
+          children: [
+            Icon(FontAwesomeIcons.award, color: Colors.orange[700]),
+            const SizedBox(width: 10),
+            const Text('Pencapaian Baru!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Selamat, Anda mendapatkan lencana:',
+                textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            Text(
+              badgeData['name'] ?? 'Lencana Baru',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Keren!'),
+          ),
+        ],
+      ),
+    );
   }
 
-  Object? _createDataModel(Map<String, dynamic> firestoreData, String docId) {
-    final category = firestoreData['category'] as String?;
-    if (category == null) return null;
-    switch (category) {
-      case 'Artefak':
-        return ArtefakData.fromFirestore(firestoreData, docId);
-      case 'Batuan':
-        return BatuanData.fromFirestore(firestoreData, docId);
-      case 'Fosil':
-        return FosilData.fromFirestore(firestoreData, docId);
-      case 'Mineral':
-        return MineralData.fromFirestore(firestoreData, docId);
-      default:
-        return null;
+  /// Fungsi untuk memeriksa apakah ada lencana baru yang didapat.
+  void _checkAndShowBadge(Future<DocumentSnapshot?> badgeFuture) async {
+    final badgeDoc = await badgeFuture;
+    if (badgeDoc != null && mounted) {
+      // Jeda sejenak sebelum menampilkan dialog lencana
+      await Future.delayed(const Duration(milliseconds: 500));
+      _showBadgeAwardedDialog(badgeDoc);
     }
   }
 
@@ -103,7 +129,7 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
                     context,
                     MaterialPageRoute(
                         builder: (context) =>
-                            _createDetailScreen(itemDataObject)));
+                            createDetailScreen(itemDataObject)));
               },
             ),
           ],
@@ -112,7 +138,7 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
     );
   }
 
-  // Fungsi utama untuk memproses hasil scan
+// --- Fungsi utama untuk memproses hasil scan ---
   void _processBarcode(BarcodeCapture capture) async {
     if (_isProcessing) return;
     setState(() {
@@ -123,7 +149,7 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
 
     if (scannedId == null || scannedId.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('QR Code tidak valid.')));
+          .showSnackBar(const SnackBar(content: Text('Kode QR tidak valid.')));
       if (mounted)
         setState(() {
           _isProcessing = false;
@@ -138,14 +164,22 @@ class _CameraScannerPageState extends State<CameraScannerPage> {
           .get();
       if (docSnapshot.exists && context.mounted) {
         final data = docSnapshot.data()!;
-        final itemData = _createDataModel(data, docSnapshot.id);
+        final category = data['category'] ?? '';
+        final itemData = createDataModel(category, data, docSnapshot.id);
 
         if (itemData != null) {
-          await _scannerController.stop(); // Hentikan kamera
-          await _showSuccessDialog(data, itemData); // Tampilkan dialog sukses
-          if (mounted)
-            await _scannerController
-                .start(); // Nyalakan lagi kamera setelah dialog ditutup
+          await _scannerController.stop();
+
+          // Lacak aktivitas scan untuk lencana
+          final user = Provider.of<User?>(context, listen: false);
+          if (user != null) {
+            final badgeFuture =
+                _firestoreService.trackQrScan(user.uid, scannedId);
+            _checkAndShowBadge(badgeFuture);
+          }
+
+          await _showSuccessDialog(data, itemData);
+          if (mounted) await _scannerController.start();
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,76 +1,121 @@
+// File: lib/screens/categories/category_items_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import 'package:museum_tugasakhir/data/data.dart';
-import 'package:museum_tugasakhir/screens/details/details.dart';
+// Ganti 'museum_tugasakhir' dengan nama proyek Anda
+import 'package:museum_tugasakhir/services/firestore_service.dart';
+import 'package:museum_tugasakhir/helpers/navigation_helper.dart'; // <-- IMPORT FILE HELPER BARU
 
-class CategoryItemsScreen extends StatelessWidget {
+class CategoryItemsScreen extends StatefulWidget {
   final String categoryName;
 
   const CategoryItemsScreen({Key? key, required this.categoryName})
       : super(key: key);
 
-  // Fungsi helper untuk memilih halaman detail yang benar
-  Widget _createDetailScreen(Object data) {
-    if (data is ArtefakData) return ArtefakDetailScreen(artefakData: data);
-    if (data is BatuanData) return BatuanDetailScreen(batuanData: data);
-    if (data is FosilData) return FosilDetailScreen(fosilData: data);
-    if (data is MineralData) return MineralDetailScreen(mineralData: data);
-    return const Scaffold(body: Center(child: Text('Tipe data tidak valid')));
+  @override
+  State<CategoryItemsScreen> createState() => _CategoryItemsScreenState();
+}
+
+class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
+  final FirestoreService _firestoreService = FirestoreService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Panggil fungsi pelacakan saat halaman pertama kali dibuka
+    _trackCategoryView();
   }
 
-  //Fungsi untuk menerima ID Dokumen
-  Object? _createDataModel(
-      String category, Map<String, dynamic> firestoreData, String docId) {
-    switch (category) {
-      //ID Dokumen dikirim saat membuat objek data
-      case 'Artefak':
-        return ArtefakData.fromFirestore(firestoreData, docId);
-      case 'Batuan':
-        return BatuanData.fromFirestore(firestoreData, docId);
-      case 'Fosil':
-        return FosilData.fromFirestore(firestoreData, docId);
-      case 'Mineral':
-        return MineralData.fromFirestore(firestoreData, docId);
-      default:
-        return null;
+  // --- FUNGSI UNTUK LENCANA ---
+
+  /// Fungsi untuk menampilkan dialog saat lencana baru didapatkan.
+  void _showBadgeAwardedDialog(DocumentSnapshot badgeDoc) {
+    final badgeData = badgeDoc.data() as Map<String, dynamic>;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Row(
+          children: [
+            Icon(FontAwesomeIcons.award, color: Colors.orange[700]),
+            const SizedBox(width: 10),
+            const Text('Pencapaian Baru!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Selamat, Anda mendapatkan lencana:',
+                textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            Text(
+              badgeData['name'] ?? 'Lencana Baru',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              badgeData['description'] ?? '',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Keren!'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Fungsi untuk memeriksa apakah ada lencana baru yang didapat.
+  void _checkAndShowBadge(Future<DocumentSnapshot?> badgeFuture) async {
+    final badgeDoc = await badgeFuture;
+    if (badgeDoc != null && mounted) {
+      _showBadgeAwardedDialog(badgeDoc);
     }
+  }
+
+  /// Melacak bahwa pengguna telah membuka halaman kategori ini.
+  void _trackCategoryView() {
+    // Menunggu sebentar agar Provider siap
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = Provider.of<User?>(context, listen: false);
+      if (user != null) {
+        final future =
+            _firestoreService.trackCategoryView(user.uid, widget.categoryName);
+        _checkAndShowBadge(future);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final Query query = FirebaseFirestore.instance
         .collection('koleksi')
-        .where('category', isEqualTo: categoryName);
+        .where('category', isEqualTo: widget.categoryName);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          categoryName,
-          style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.bold, color: Colors.black),
-        ),
+        title: Text(widget.categoryName,
+            style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
         elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [Color(0xFFFFD54F), Color(0xFFFFA000)],
-            ),
-          ),
-        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: query.snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return const Center(child: Text('Gagal memuat data.'));
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
@@ -84,63 +129,39 @@ class CategoryItemsScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final doc = snapshot.data!.docs[index];
               final data = doc.data()! as Map<String, dynamic>;
-              //Mengirim ID dokumen (doc.id) ke fungsi helper
-              final itemData = _createDataModel(categoryName, data, doc.id);
+              // Memanggil fungsi helper dari file yang diimpor
+              final itemData =
+                  createDataModel(widget.categoryName, data, doc.id);
 
               return GestureDetector(
                 onTap: () {
                   if (itemData != null) {
+                    // Memanggil fungsi helper dari file yang diimpor
                     Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (context) =>
-                                _createDetailScreen(itemData)));
+                                createDetailScreen(itemData)));
                   }
                 },
-                child: Container(
-                  height: 300,
-                  clipBehavior: Clip.antiAlias,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(23),
-                  ),
-                  child: Stack(
-                    children: [
-                      Image.network(
-                        data['imageUrl'] ??
-                            'https://placehold.co/600x400/EEE/31343C',
-                        width: double.infinity,
-                        height: 300,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, progress) =>
-                            progress == null
-                                ? child
-                                : const Center(
-                                    child: CircularProgressIndicator()),
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Center(
-                                child: Icon(Icons.broken_image, size: 40)),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5)),
-                          child: Text(
-                            data['title'] ?? 'Tanpa Judul',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                child: Card(
+                  elevation: 3,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 15),
+                    leading: CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.grey[200],
+                      backgroundImage: NetworkImage(data['imageUrl'] ?? ''),
+                    ),
+                    title: Text(data['title'] ?? 'Tanpa Judul',
+                        style: GoogleFonts.montserrat(
+                            fontWeight: FontWeight.bold)),
+                    subtitle: Text(data['year'] ?? ''),
+                    trailing: const Icon(Icons.chevron_right),
                   ),
                 ),
               );

@@ -231,7 +231,6 @@ class FirestoreService {
   Future<DocumentSnapshot?> trackDetailView(
       String userId, String itemId) async {
     final userRef = _usersCollection.doc(userId);
-    // Menggunakan arrayUnion untuk memastikan ID item hanya ditambahkan sekali
     await userRef.set({
       'viewedItems': FieldValue.arrayUnion([itemId])
     }, SetOptions(merge: true));
@@ -241,6 +240,18 @@ class FirestoreService {
         List<String>.from(userData.data()?['viewedItems'] ?? []);
     if (viewedItems.length >= 10) {
       return await _checkAndAwardBadge(userId, 'penjelajah_museum');
+    }
+    return null;
+  }
+
+  Future<DocumentSnapshot?> trackGalleryImageView(String userId) async {
+    final userRef = _usersCollection.doc(userId);
+    await userRef.set({'galleryImageViews': FieldValue.increment(1)},
+        SetOptions(merge: true));
+
+    final userData = await userRef.get();
+    if ((userData.data()?['galleryImageViews'] ?? 0) >= 20) {
+      return await _checkAndAwardBadge(userId, 'pecinta_galeri');
     }
     return null;
   }
@@ -339,6 +350,10 @@ class FirestoreService {
       return await _checkAndAwardBadge(userId, 'ahli_sejarah');
     }
     return null;
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getAllBadgesStream() {
+    return _badgesCollection.snapshots();
   }
 
   /// Stream untuk mendapatkan semua lencana yang telah dimiliki pengguna.
